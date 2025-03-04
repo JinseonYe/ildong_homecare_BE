@@ -31,3 +31,16 @@ export const createUserWithTransaction = async (data: any) => {
     conn.release(); // 연결 해제
   }
 };
+
+// 이메일 중복 확인
+export const isUserEmailAvailable = async (userEmail: string) => {
+  try {
+    const count = await authModel.checkUserEmailExists(userEmail);
+
+    return count === 0; // count가 0이면 true(사용 가능), 1 이상이면 false(이미 존재)
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : '서버 오류가 발생했습니다.',
+    );
+  }
+};
