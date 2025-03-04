@@ -47,7 +47,7 @@ export const getAllBuilding = async (req: Request, res: Response) => {
 // 건물 정보 업데이트하기
 export const updateBuilding = async (req: Request, res: Response) => {
   const updateData = req.body;
-  const buildingId = updateData.buildingId;
+  const buildingId = req.params.buildingId;
 
   try {
     // 건믈 ID 가 포함되었는지 확인
@@ -59,12 +59,21 @@ export const updateBuilding = async (req: Request, res: Response) => {
     }
 
     // 건물 정보 업데이트하기
-    const isUpdate = await buildingService.updateBuilding(updateData);
+    const isUpdate = await buildingService.updateBuilding(
+      buildingId,
+      updateData,
+    );
     let result;
 
     // 업데이트 성공 시 id별로 건물 정보 조회 데이터 반환
+    // TODO: 전체 건물 정보 조회할지 id별로 건물 조회할지 상의 후 수정
     if (isUpdate) {
-      result = await buildingService.fetchAllBuildingById(buildingId);
+      result = await buildingService.fetchBuildingById(buildingId);
+    } else {
+      return res.status(400).send({
+        success: false,
+        message: '업데이트할 건물 정보가 존재하는지 확인하세요.',
+      });
     }
 
     if (result) {

@@ -50,7 +50,7 @@ export const fetchAllBuildingInfo = async () => {
 };
 
 // 건물 ID 별로 정보 조회
-export const fetchAllBuildingById = async (buildingId: any) => {
+export const fetchBuildingById = async (buildingId: any) => {
   let conn;
   const deleteStatus = 0;
 
@@ -83,11 +83,15 @@ export const updateBuilding = async (
 ) => {
   let conn;
   const time = new Date();
+  const deleteStatus = 0;
 
   try {
-    const sql = `UPDATE t_building SET ${setQuery}, modified_at =? WHERE building_id = ?`;
+    const sql = `
+    UPDATE t_building SET ${setQuery}, modified_at =? 
+      WHERE is_deleted =? 
+      AND building_id = ?`;
 
-    values.push(time, buildingId);
+    values.push(time, deleteStatus, buildingId);
 
     conn = await pool.getConnection();
     const [result]: any = await conn.query(sql, values);
@@ -104,7 +108,7 @@ export const updateBuilding = async (
 export const deleteBuilding = async (buildingId: any) => {
   let conn;
   const time = new Date();
-  const deletedStatus = 1;
+  const deleteStatus = 1;
 
   try {
     const sql = `UPDATE t_building
@@ -113,7 +117,7 @@ export const deleteBuilding = async (buildingId: any) => {
 
     conn = await pool.getConnection();
     const [result]: any = await conn.query(sql, [
-      deletedStatus,
+      deleteStatus,
       time,
       buildingId,
     ]);

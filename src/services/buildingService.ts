@@ -28,9 +28,9 @@ export const getAllBuilding = async () => {
 };
 
 // 건물 ID 별로 조회 하기
-export const fetchAllBuildingById = async (buildingId: any) => {
+export const fetchBuildingById = async (buildingId: any) => {
   try {
-    let result = await buildingModel.fetchAllBuildingById(buildingId);
+    let result = await buildingModel.fetchBuildingById(buildingId);
     result = formatting.toCamelCase(result);
     if (result.length > 0) {
       return result;
@@ -41,11 +41,9 @@ export const fetchAllBuildingById = async (buildingId: any) => {
 };
 
 // 건물 정보 업데이트하기
-export const updateBuilding = async (updateData: any) => {
+export const updateBuilding = async (buildingId: any, updateData: any) => {
   try {
-    const { buildingId, ...updateFields } = updateData;
-    const { setQuery, values } =
-      generateQuery.generateUpdateQuery(updateFields);
+    const { setQuery, values } = generateQuery.generateUpdateQuery(updateData);
     let result = await buildingModel.updateBuilding(
       buildingId,
       setQuery,
