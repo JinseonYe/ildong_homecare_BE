@@ -64,11 +64,10 @@ export const findUserById = async (userEmail: string) => {
   const deleteStatus = 0;
   try {
     const sql = `
-        SELECT t_user.user_code, prof.user_name, pwd.password, ul.user_level, prof.company_code
+        SELECT t_user.user_id, prof.user_name, pwd.password
         FROM t_user 
-        JOIN t_user_profile AS prof ON t_user.user_code = prof.user_code 
-        JOIN t_auth_password AS pwd ON t_user.user_code = pwd.user_code
-        JOIN t_user_level AS ul ON t_user.user_code = ul.user_code
+        JOIN t_user_profile AS prof ON t_user.user_id = prof.user_id 
+        JOIN t_user_password AS pwd ON t_user.user_id = pwd.user_id
         WHERE t_user.user_email = ?
         AND t_user.is_deleted =?`;
     conn = await pool.getConnection();
@@ -84,156 +83,18 @@ export const findUserById = async (userEmail: string) => {
   }
 };
 
-// DB에 인증코드 삽입
-export const insertAuthCode = async (
-  userEmail: string,
-  authCode: string,
-  createdAt: Date,
-  expiresAt: Date,
-) => {
-  let conn;
-  try {
-    const sql =
-      'INSERT INTO t_user_email_auth_code (user_email, email_auth_code, created_at, expires_at) VALUES (?, ?, ?, ?)';
-    conn = await pool.getConnection();
-    await conn.query(sql, [userEmail, authCode, createdAt, expiresAt]);
-  } catch (error) {
-    console.error('Error inserting auth code:', error);
-    throw error;
-  } finally {
-    if (conn) conn.release();
-  }
-};
-
-// DB에서 이메일이 일치하는 만료되지 않은 가장 최근의 인증코드와 상태를 반환
-export const getLatestAuthCode = async (
-  userEmail: string | undefined,
-): Promise<string | null> => {
-  let conn;
-
-  try {
-    const sql = `
-        SELECT email_auth_code FROM t_user_email_auth_code
-        WHERE user_email = ? AND expires_at > NOW()
-        ORDER BY created_at DESC
-        LIMIT 1
-      `;
-    conn = await pool.getConnection();
-
-    // 쿼리 결과의 타입을 RowDataPacket[]로 명시
-    const [rows]: [RowDataPacket[], any] = await conn.query(sql, [userEmail]);
-
-    if (rows.length > 0) {
-      const emailAuthCode = rows[0].email_auth_code;
-      return emailAuthCode; // 가장 최근의 인증코드를 반환
-    } else {
-      return null; // 만료되지 않은 인증코드가 없는 경우 null 반환
-    }
-  } catch (error) {
-    console.error(error);
-    throw error;
-  } finally {
-    if (conn) conn.release();
-  }
-};
-
-// auth_code_status 를 1로(인증 완료) 변경
-export const updateAuthCodeToUsedAndVerifiedTime = async (
-  userEmail: string,
-  authCode: string,
-) => {
-  let conn;
-  const updateStatus = 1;
-  const verifiedAt = new Date();
-  try {
-    const sql =
-      'UPDATE t_user_email_auth_code SET auth_code_status = ?, verified_at = ? WHERE user_email = ? AND email_auth_code = ?';
-    conn = await pool.getConnection();
-    conn.query(sql, [updateStatus, verifiedAt, userEmail, authCode]);
-  } catch (error) {
-    console.error('Error occurred:', error);
-    throw error;
-  } finally {
-    if (conn) conn.release();
-  }
-};
-
 // refreshToken 저장
 export const insertRefreshToken = async (
   refreshToken: string,
-  userCode: number,
+  userId: number,
 ) => {
   let conn;
   const currentTime = new Date();
   try {
     const sql =
-      'INSERT INTO t_token_user (refresh_token, user_code, created_at) VALUES (?, ?, ?)';
+      'INSERT INTO t_token_user (refresh_token, user_id, created_at) VALUES (?, ?, ?)';
     conn = await pool.getConnection();
-    conn.query(sql, [refreshToken, userCode, currentTime]);
-  } catch (error) {
-    console.error('Error occurred:', error);
-    throw error;
-  } finally {
-    if (conn) conn.release();
-  }
-};
-
-export const checkIfEmailVerified = async (userCode: number) => {
-  let conn;
-  try {
-    const sql =
-      'SELECT is_email_approval FROM t_user_approve WHERE user_code =?';
-    conn = await pool.getConnection();
-    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(sql, [
-      userCode,
-    ]);
-
-    return rows.length > 0 ? rows[0].is_email_approval : null;
-  } catch (error) {
-    console.error(error);
-    throw error;
-  } finally {
-    if (conn) conn.release();
-  }
-};
-
-// is_email_approval 을 1로(승인 완료) 변경
-export const updateEmailAppoval = async (userEmail: string) => {
-  let conn;
-  const updateStatus = 1;
-  const deleteStatus = 0;
-  const time = new Date();
-  try {
-    const sql = `
-        UPDATE t_user_approve AS ua
-        JOIN t_user AS u ON ua.user_code = u.user_code
-        SET ua.is_email_approval = ? , ua.email_approval_at =?
-        WHERE u.user_email = ? 
-          AND u.is_deleted = ?;`;
-
-    conn = await pool.getConnection();
-    conn.query(sql, [updateStatus, time, userEmail, deleteStatus]);
-  } catch (error) {
-    console.error('Error occurred:', error);
-    throw error;
-  } finally {
-    if (conn) conn.release();
-  }
-};
-
-// companyName으로 companyCode 찾기
-export const findCompanycodeByCompanyName = async (companyName: string) => {
-  let conn;
-  try {
-    const sql = `
-        SELECT company_code
-        FROM t_company_info
-        WHERE company_name = ?;`;
-    conn = await pool.getConnection();
-    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(sql, [
-      companyName,
-    ]);
-    return rows.length > 0 ? rows[0].company_code : null;
+    conn.query(sql, [refreshToken, userId, currentTime]);
   } catch (error) {
     console.error('Error occurred:', error);
     throw error;

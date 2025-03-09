@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import * as authModel from '../models/authModel';
 import { pool } from '../config/db';
+import * as formatting from '../utils/formatting';
 
 // 비밀번호 해싱
 export const hashing = async (passowrd: string) => {
@@ -13,6 +14,9 @@ export const hashing = async (passowrd: string) => {
 
 // 트랜잭션으로 사용자 생성 및 정보 삽입
 export const createUserWithTransaction = async (data: any) => {
+  const hashedPassword = await hashing(data.password);
+  data.password = hashedPassword; // 비밀번호 해싱하고 data에 다시 삽입
+
   const conn = await pool.getConnection();
   await conn.beginTransaction();
   try {
@@ -43,4 +47,26 @@ export const isUserEmailAvailable = async (userEmail: string) => {
       error instanceof Error ? error.message : '서버 오류가 발생했습니다.',
     );
   }
+};
+
+// ID가 일치하는 사용자가 있는지 확인하고 사용자 정보 가져옴
+export const findUserByIdService = async (userEmail: string) => {
+  const userInfo = await authModel.findUserById(userEmail);
+
+  if (userInfo.length === 0) {
+    return null; // 사용자가 없는 경우
+  }
+
+  const userInfoToCamel = formatting.toCamelCase(userInfo);
+  return userInfoToCamel;
+};
+
+// 비밀번호 비교
+export const comparePassword = async (
+  password: string,
+  hashedPassword: string,
+) => {
+  const isMatch = await bcrypt.compare(password, hashedPassword);
+
+  return isMatch;
 };
