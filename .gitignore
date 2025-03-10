@@ -134,3 +134,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# .gitignore에 추가하여 서비스 계정 키 파일을 Git에 포함되지 않도록 설정
+src/config/firebase-key.json

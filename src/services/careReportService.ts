@@ -3,11 +3,13 @@ import * as formatting from '../utils/formatting';
 import { pool } from '../config/db';
 
 // 작업내역 등록하기
-export const createCareReport = async (careReportInfo: any) => {
+export const createCareReport = async (careReportInfo: any, files: any) => {
   let conn;
   try {
     conn = await pool.getConnection();
     await conn.beginTransaction(); // 트랜잭션 시작
+
+    const createdAt = new Date();
 
     // 작업 내역 등록
     const result = await careReportModel.insertCareReport(conn, careReportInfo);
@@ -17,6 +19,22 @@ export const createCareReport = async (careReportInfo: any) => {
 
     const careReportId = result.insertId; // 생성된 `care_report_id`
     const careCategoryIds = careReportInfo.careCategoryIds;
+
+    // 업로드된 파일 정보 삽입 (파일이 여러 개 있을 경우)
+    if (Array.isArray(files)) {
+      for (const file of files) {
+        // 파일 하나씩 처리하여 삽입
+        await careReportModel.insertUploadedFile(
+          conn,
+          careReportId,
+          file.fileName,
+          file.fileUrl,
+          createdAt,
+        );
+      }
+    } else {
+      console.log('업로드된 파일 정보가 배열이 아닙니다.');
+    }
 
     // 카테고리 ID 유효성 체크 후 삽입
     if (careCategoryIds?.length > 0) {

@@ -112,3 +112,28 @@ export const fetchAllCareReport = async () => {
     if (conn) conn.release();
   }
 };
+
+// 업로드된 파일 url 삽입
+export const insertUploadedFile = async (
+  conn: any,
+  careReportId: any,
+  fileName: any,
+  fileUrl: any,
+  createdAt: any,
+) => {
+  try {
+    let sql = `
+    INSERT INTO t_file_upload (care_report_id, file_name, file_url, created_at) 
+        VALUES (?, ?, ?, ?);`;
+
+    const [result]: any = await conn.query(sql, [
+      careReportId,
+      fileName,
+      fileUrl,
+      createdAt,
+    ]);
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
