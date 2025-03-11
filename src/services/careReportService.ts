@@ -43,8 +43,11 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
         careCategoryIds,
       );
 
-      const invalidCategoryIds = careCategoryIds.filter(
-        (id: number) => !validCategoryIds.includes(id),
+      const careCategoryIdsArray = careCategoryIds.split(',').map(Number);
+      const validCategorySet = new Set(validCategoryIds);
+      const invalidCategoryIds = careCategoryIdsArray.filter(
+        // 유효하지 않은 ID 찾기
+        (id: any) => !validCategorySet.has(id),
       );
 
       if (invalidCategoryIds.length > 0) {

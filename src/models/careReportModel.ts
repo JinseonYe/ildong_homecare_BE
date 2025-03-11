@@ -75,7 +75,8 @@ export const getValidCareCategoryIds = async (
         SELECT care_category_id FROM t_care_category 
         WHERE care_category_id IN (?);
       `;
-    const [rows]: any = await conn.query(sql, [categoryIds]);
+    const [rows]: any = await conn.query(sql, [[...categoryIds]]);
+
     return rows.map((row: any) => row.care_category_id);
   } catch (error) {
     throw error;
