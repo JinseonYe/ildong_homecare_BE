@@ -91,14 +91,18 @@ export const fetchAllCareReport = async () => {
 
   try {
     let sql = `
-        SELECT 
-        cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, cr.title, cr.care_content, cr.care_comment, 
-        GROUP_CONCAT(DISTINCT crc.care_category_id ORDER BY crc.care_category_id) AS care_category_ids
-        FROM t_care_report AS cr
-        JOIN t_care_report_category AS crc 
-            ON cr.care_report_id = crc.care_report_id
-        WHERE cr.is_deleted = ?
-        GROUP BY cr.care_report_id;`;
+    SELECT 
+      cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, 
+      cr.title, cr.care_content, cr.care_comment, 
+      fu.file_name, fu.file_url,
+      crc.care_category_id
+    FROM t_care_report AS cr
+    LEFT JOIN t_care_report_category AS crc 
+      ON cr.care_report_id = crc.care_report_id
+    LEFT JOIN t_file_upload AS fu
+      ON cr.care_report_id = fu.care_report_id
+    WHERE cr.is_deleted = 0
+    ORDER BY cr.care_report_id;`;
 
     conn = await pool.getConnection();
 
