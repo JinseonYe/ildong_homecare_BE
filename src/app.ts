@@ -3,6 +3,7 @@ import cors from 'cors';
 import buildingRoute from './routes/buildingRoute';
 import careReportRoute from './routes/careReportRoute';
 import authRoute from './routes/authRoute';
+import fcmRoute from './routes/fcmRoute';
 
 const app = express();
 
@@ -11,5 +12,6 @@ app.use(express.json());
 app.use('/', buildingRoute);
 app.use('/', careReportRoute);
 app.use('/', authRoute);
+app.use('/', fcmRoute);
 
 export default app;

@@ -1,8 +1,11 @@
 import app from './app';
 import http from 'http';
 import dotenv from 'dotenv';
+import fcmConnection from './services/fcmService';
 
 dotenv.config();
+
+fcmConnection();
 
 const httpServer = http.createServer(app);
 
