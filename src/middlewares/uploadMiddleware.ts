@@ -4,6 +4,9 @@ import admin from 'firebase-admin';
 import { getStorage } from 'firebase-admin/storage';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // 현재 파일의 경로를 가져오기 위해 fileURLToPath 사용
 const __filename = fileURLToPath(import.meta.url);
@@ -14,7 +17,7 @@ admin.initializeApp({
   credential: admin.credential.cert(
     path.join(__dirname, '..', 'config', 'firebase-key.json'),
   ),
-  storageBucket: 'one-homecare.firebasestorage.app', // Firebase Storage 버킷 주소로 수정
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // Firebase Storage 버킷 주소로 수정
 });
 
 // Multer 설정 (메모리 저장소 사용)
