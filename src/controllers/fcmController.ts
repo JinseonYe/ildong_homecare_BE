@@ -2,20 +2,25 @@ import { Request, Response } from 'express';
 import admin from 'firebase-admin';
 import * as fcmService from '../services/fcmService';
 import * as fcmModel from '../models/fcmModel';
+import * as formatting from '../utils/formatting';
 
 // 푸시 알림 보내기
 export const sendNotification = async (req: Request, res: Response) => {
   try {
     const { title, body, userId } = req.body;
 
-    const fcmToken = await fcmModel.findFCMTokenByUserId(userId);
+    let fcmTokenArr = await fcmModel.findFCMTokenByUserId(userId);
+    fcmTokenArr = formatting.toCamelCase(fcmTokenArr);
 
-    if (!fcmToken) {
+    if (!fcmTokenArr.length) {
       return res.status(404).json({ error: 'User or FCM token not found' }); // 토큰 누락 시 에러 반환
     }
 
+    const fcmToken = fcmTokenArr[0].fcmToken;
+    console.log(fcmToken);
+
     const message = {
-      fcmToken,
+      token: fcmToken, // ✅ 'fcmToken' → 'token' 으로 변경
       notification: {
         title,
         body,
@@ -39,7 +44,7 @@ export const sendNotification = async (req: Request, res: Response) => {
 
     await admin.messaging().send(message);
 
-    res.status(200).json({ message: 'Successfully sent notifications!' });
+    res.status(200).json({ message: 'Successfully sent notification!' });
   } catch (err: any) {
     console.error('FCM send error:', err);
     res
