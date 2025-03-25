@@ -4,6 +4,7 @@ import buildingRoute from './routes/buildingRoute';
 import careReportRoute from './routes/careReportRoute';
 import authRoute from './routes/authRoute';
 import fcmRoute from './routes/fcmRoute';
+import userRoute from './routes/userRooute';
 
 const app = express();
 
@@ -13,5 +14,6 @@ app.use('/', buildingRoute);
 app.use('/', careReportRoute);
 app.use('/', authRoute);
 app.use('/', fcmRoute);
+app.use('/', userRoute);
 
 export default app;
