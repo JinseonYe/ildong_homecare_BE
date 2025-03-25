@@ -4,7 +4,7 @@ import buildingRoute from './routes/buildingRoute';
 import careReportRoute from './routes/careReportRoute';
 import authRoute from './routes/authRoute';
 import fcmRoute from './routes/fcmRoute';
-import userRoute from './routes/userRooute';
+import userRoute from './routes/userRoute';
 
 const app = express();
 
