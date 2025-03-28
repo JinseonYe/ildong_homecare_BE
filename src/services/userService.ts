@@ -74,7 +74,8 @@ export const getUsers = async (userDto: UserSearchDto) => {
       whereClause,
       queryParams,
     );
-    return result;
+    const resultToCamel = formatting.toCamelCase(result);
+    return resultToCamel;
   } catch (error: unknown) {
     // error를 Error 객체로 타입 단언
     if (error instanceof Error) {

@@ -54,7 +54,7 @@ export const getUsers = async (req: Request, res: Response) => {
       ? Number(req.query.approved)
       : undefined;
     const page = req.query.page ? Number(req.query.page) : 1;
-    const pageSize = req.query.pageSize ? Number(req.query.pageSize) : 10;
+    const pageSize = req.query.page_size ? Number(req.query.page_size) : 10;
 
     // DTO 생성
     const userSearchDto: UserSearchDto = {
