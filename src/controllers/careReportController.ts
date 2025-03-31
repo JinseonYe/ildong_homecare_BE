@@ -95,3 +95,33 @@ export const getCareReports = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Id별로 작업 내역 조회하기
+export const getCareReportById = async (req: Request, res: Response) => {
+  try {
+    const requestQuery = req.query;
+    const requestQueryToCamel = formatting.toCamelCase(requestQuery);
+    const careReportId = requestQueryToCamel.careReportId;
+    const careReportSearchDto = {
+      careReportId,
+    };
+
+    const result = await careReportService.getCareReportById(
+      careReportSearchDto,
+    );
+
+    if (result) {
+      return res.status(200).send({
+        success: true,
+        message: '작업 내역 조회를 성공했습니다.',
+        data: result,
+      });
+    }
+  } catch (error) {
+    console.log('작업 내역 조회 실패: ', error);
+    return res.status(500).send({
+      success: false,
+      message: '서버 오류로 작업 내역 조회 실패',
+    });
+  }
+};

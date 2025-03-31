@@ -12,5 +12,6 @@ router.post(
 );
 router.get('/api/care-status', careReportController.getAllCareStatus);
 router.get('/api/care-reports', careReportController.getCareReports);
+router.get('/api/care-report', careReportController.getCareReportById);
 
 export default router;

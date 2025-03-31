@@ -132,3 +132,25 @@ export const getCareReports = async (careReportSearchDto: any) => {
     console.log(error);
   }
 };
+
+// Id별로 작업 내역 조회하기
+export const getCareReportById = async (careReportSearchDto: any) => {
+  // DTO 유효성 검사
+  if (!careReportSearchDto) {
+    throw new Error('No search criteria provided');
+  }
+
+  const { careReportId } = careReportSearchDto;
+
+  try {
+    const fetchedData = await careReportModel.findCareReportById(careReportId);
+    let result = formatting.toCamelCase(fetchedData);
+    if (result) {
+      return result;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
