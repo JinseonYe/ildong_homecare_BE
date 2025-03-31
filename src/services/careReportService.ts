@@ -144,12 +144,57 @@ export const getCareReportById = async (careReportSearchDto: any) => {
 
   try {
     const fetchedData = await careReportModel.findCareReportById(careReportId);
-    let result = formatting.toCamelCase(fetchedData);
+    let result = await formmatFetchedAllCareReport(fetchedData);
     if (result) {
       return result;
     } else {
       return false;
     }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+// 작업 내역 조회된 데이터 포맷팅하기
+export const formmatFetchedAllCareReport = async (
+  fetchedData: RowDataPacket[],
+) => {
+  try {
+    const reportMap = new Map<number, any>();
+
+    // 데이터를 카멜 케이스로 변환
+    fetchedData = formatting.toCamelCase(fetchedData);
+
+    fetchedData.forEach(
+      ({ careReportId, fileName, fileUrl, careCategoryId, ...row }) => {
+        // careReportId가 없으면 새로 생성
+        if (!reportMap.has(careReportId)) {
+          reportMap.set(careReportId, {
+            ...row,
+            careReportId,
+            files: new Map<string, any>(), // 파일 중복을 위한 Map 사용
+          });
+        }
+
+        const report = reportMap.get(careReportId);
+
+        // 파일 정보 추가 (중복 방지)
+        if (fileName && fileUrl) {
+          const fileKey = `${fileName}-${fileUrl}`;
+          if (!report.files.has(fileKey)) {
+            report.files.set(fileKey, { fileName, fileUrl });
+          }
+        }
+      },
+    );
+
+    // Set을 배열로 변환 후 반환
+    const result = Array.from(reportMap.values()).map((report) => ({
+      ...report,
+      files: Array.from(report.files.values()), // Map에서 values만 추출
+    }));
+
+    return result;
   } catch (error) {
     console.log(error);
   }

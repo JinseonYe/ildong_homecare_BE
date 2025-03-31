@@ -206,16 +206,19 @@ export const findCareReportById = async (careReportId: any) => {
   try {
     let sql = `
       SELECT 
-        cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, b.building_name,
+        cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, 
         cr.title, cr.care_content, cr.care_comment, 
-        GROUP_CONCAT(crc.care_category_id ORDER BY crc.care_category_id SEPARATOR ', ') AS care_categories, cr.created_at
+        fu.file_name, fu.file_url,
+        GROUP_CONCAT(DISTINCT crc.care_category_id ORDER BY crc.care_category_id) AS care_category_ids
       FROM t_care_report AS cr
       LEFT JOIN t_care_report_category AS crc 
         ON cr.care_report_id = crc.care_report_id
-      JOIN t_building AS b
-        ON cr.building_id = b.building_id
+      LEFT JOIN t_file_upload AS fu
+        ON cr.care_report_id = fu.care_report_id
       WHERE cr.is_deleted = ?
-      AND cr.care_report_id = ?`;
+      AND cr.care_report_id = ?
+      ORDER BY cr.care_report_id;
+     `;
 
     conn = await pool.getConnection();
     const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
