@@ -47,14 +47,14 @@ export const updateUserProfile = async (req: Request, res: Response) => {
 export const getUsers = async (req: Request, res: Response) => {
   try {
     // 쿼리 파라미터 추출 및 기본값 설정
-    const userRole = req.query.user_role
-      ? Number(req.query.user_role)
+    const userRole = req.query.userRole
+      ? Number(req.query.userRole)
       : undefined;
     const approved = req.query.approved
       ? Number(req.query.approved)
       : undefined;
     const page = req.query.page ? Number(req.query.page) : 1;
-    const pageSize = req.query.page_size ? Number(req.query.page_size) : 10;
+    const pageSize = req.query.pageSize ? Number(req.query.pageSize) : 10;
 
     // DTO 생성
     const userSearchDto: UserSearchDto = {
