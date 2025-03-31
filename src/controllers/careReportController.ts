@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as careReportService from '../services/careReportService';
+import * as formatting from '../utils/formatting';
 
 // 작업내역 등록하기
 export const createCareReport = async (req: Request, res: Response) => {
@@ -59,10 +60,25 @@ export const getAllCareStatus = async (req: Request, res: Response) => {
   }
 };
 
-// 작업 내역 전체 조회하기
-export const getAllCareReport = async (req: Request, res: Response) => {
+// 작업 내역 조회하기
+export const getCareReports = async (req: Request, res: Response) => {
   try {
-    const result = await careReportService.getAllCareReport();
+    const requestQuery = req.query;
+    const requestQueryToCamel = formatting.toCamelCase(requestQuery);
+    const buildingName = requestQueryToCamel.buildingName;
+    const page = requestQueryToCamel.page;
+    const pageSize = requestQueryToCamel.pageSize;
+    const startDate = requestQueryToCamel.startDate;
+    const endDate = requestQueryToCamel.endDate;
+    const careReportSearchDto = {
+      buildingName,
+      page,
+      pageSize,
+      startDate,
+      endDate,
+    };
+
+    const result = await careReportService.getCareReports(careReportSearchDto);
 
     if (result) {
       return res.status(200).send({

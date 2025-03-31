@@ -90,9 +90,27 @@ export const getAllCareStatus = async () => {
 };
 
 // 작업 내역 조회하기
-export const getAllCareReport = async () => {
+export const getCareReports = async (careReportSearchDto: any) => {
+  // DTO 유효성 검사
+  if (!careReportSearchDto) {
+    throw new Error('No search criteria provided');
+  }
+
+  const { buildingName, page, pageSize, startDate, endDate } =
+    careReportSearchDto;
+
+  const offset = (page - 1) * pageSize;
+  const buildingNameWithlikePattern = `%${buildingName}%`;
+  const pageSizeToNumber = Number(pageSize);
+
   try {
-    const fetchedData = await careReportModel.fetchAllCareReport();
+    const fetchedData = await careReportModel.findCareReports(
+      startDate,
+      endDate,
+      buildingNameWithlikePattern,
+      pageSizeToNumber,
+      offset,
+    );
     let result = await formmatFetchedAllCareReport(fetchedData);
     result = formatting.toCamelCase(result);
 
