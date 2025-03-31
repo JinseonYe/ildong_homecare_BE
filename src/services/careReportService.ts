@@ -99,9 +99,18 @@ export const getCareReports = async (careReportSearchDto: any) => {
   const { buildingName, page, pageSize, startDate, endDate } =
     careReportSearchDto;
 
-  const offset = (page - 1) * pageSize;
-  const buildingNameWithlikePattern = `%${buildingName}%`;
-  const pageSizeToNumber = Number(pageSize);
+  // 타입을 숫자로 바꾸면서 기본값 설정도 해줌
+  const pageToNumber = page ? Number(page) : 1;
+  const pageSizeToNumber = pageSize ? Number(pageSize) : 10;
+
+  const offset = (pageToNumber - 1) * pageSizeToNumber;
+
+  let buildingNameWithlikePattern;
+
+  // buildingName이 있을 때만
+  if (typeof buildingName != 'undefined' && buildingName) {
+    buildingNameWithlikePattern = `%${buildingName}%`;
+  }
 
   try {
     const fetchedData = await careReportModel.findCareReports(
@@ -111,66 +120,14 @@ export const getCareReports = async (careReportSearchDto: any) => {
       pageSizeToNumber,
       offset,
     );
-    let result = await formmatFetchedAllCareReport(fetchedData);
-    result = formatting.toCamelCase(result);
+
+    let result = formatting.toCamelCase(fetchedData);
 
     if (result) {
       return result;
     } else {
       return false;
     }
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-// 작업 내역 조회된 데이터 포맷팅하기
-export const formmatFetchedAllCareReport = async (
-  fetchedData: RowDataPacket[],
-) => {
-  try {
-    const reportMap = new Map<number, any>();
-
-    // 데이터를 카멜 케이스로 변환
-    fetchedData = formatting.toCamelCase(fetchedData);
-
-    fetchedData.forEach(
-      ({ careReportId, fileName, fileUrl, careCategoryId, ...row }) => {
-        // careReportId가 없으면 새로 생성
-        if (!reportMap.has(careReportId)) {
-          reportMap.set(careReportId, {
-            ...row,
-            careReportId,
-            files: new Map<string, any>(), // 파일 중복을 위한 Map 사용
-            categories: new Set(), // 카테고리 중복을 위한 Set 사용
-          });
-        }
-
-        const report = reportMap.get(careReportId);
-
-        // 파일 정보 추가 (중복 방지)
-        if (fileName && fileUrl) {
-          const fileKey = `${fileName}-${fileUrl}`;
-          if (!report.files.has(fileKey)) {
-            report.files.set(fileKey, { fileName, fileUrl });
-          }
-        }
-
-        // 카테고리 정보 추가 (중복 방지)
-        if (careCategoryId) {
-          report.categories.add(careCategoryId);
-        }
-      },
-    );
-
-    // Set을 배열로 변환 후 반환
-    const result = Array.from(reportMap.values()).map((report) => ({
-      ...report,
-      categories: Array.from(report.categories),
-      files: Array.from(report.files.values()), // Map에서 values만 추출
-    }));
-
-    return result;
   } catch (error) {
     console.log(error);
   }

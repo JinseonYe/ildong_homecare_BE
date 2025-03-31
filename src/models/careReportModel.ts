@@ -83,46 +83,57 @@ export const getValidCareCategoryIds = async (
   }
 };
 
-// 모든 작업 내역 조회
+// 필터별로 작업 내역 조회
 // TODO: 우선 모든 카테고리 id를 한 컬럼에 넣어서 문자로 묶어서 보내는데 요구사항 수정에 따라 변경 가능함
 export const findCareReports = async (
-  startDate: any,
-  endDate: any,
-  buildingName: any,
-  pageSize: any,
-  offset: any,
+  startDate?: string,
+  endDate?: string,
+  buildingName?: string,
+  pageSize?: number,
+  offset?: number,
 ) => {
   let conn;
   const deleteStatus = 0;
-  const params = [
-    deleteStatus,
-    buildingName,
-    startDate,
-    endDate,
-    pageSize,
-    offset,
-  ];
+  const params: any[] = [deleteStatus]; // 기본 파라미터
 
   try {
     let sql = `
       SELECT 
         cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, b.building_name,
         cr.title, cr.care_content, cr.care_comment, 
-        GROUP_CONCAT(crc.care_category_id ORDER BY crc.care_category_id SEPARATOR ', ') AS care_categories
+        GROUP_CONCAT(crc.care_category_id ORDER BY crc.care_category_id SEPARATOR ', ') AS care_categories, cr.created_at
       FROM t_care_report AS cr
       LEFT JOIN t_care_report_category AS crc 
         ON cr.care_report_id = crc.care_report_id
       JOIN t_building AS b
         ON cr.building_id = b.building_id
-      WHERE cr.is_deleted = ?
-      AND b.building_name LIKE ?
-      AND cr.created_at BETWEEN ? AND ?
-      GROUP BY cr.care_report_id
-      ORDER BY cr.care_report_id
-      LIMIT ? OFFSET ?`;
+      WHERE cr.is_deleted = ?`;
+
+    // 조건이 있을 때만 추가
+    if (typeof buildingName != 'undefined' && buildingName) {
+      sql += ` AND b.building_name LIKE ?`;
+      params.push(`%${buildingName}%`);
+    }
+    if (startDate && endDate) {
+      sql += ` AND cr.created_at BETWEEN ? AND ?`;
+      params.push(startDate, endDate);
+    } else if (startDate) {
+      sql += ` AND cr.created_at >= ?`;
+      params.push(startDate);
+    } else if (endDate) {
+      sql += ` AND cr.created_at <= ?`;
+      params.push(endDate);
+    }
+
+    sql += ` GROUP BY cr.care_report_id ORDER BY cr.care_report_id`;
+
+    // 페이지네이션 적용
+    if (pageSize !== undefined && offset !== undefined) {
+      sql += ` LIMIT ? OFFSET ?`;
+      params.push(pageSize, offset);
+    }
 
     conn = await pool.getConnection();
-
     const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
       sql,
       params,
