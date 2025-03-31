@@ -102,9 +102,18 @@ export const getCareReportById = async (req: Request, res: Response) => {
     const requestQuery = req.query;
     const requestQueryToCamel = formatting.toCamelCase(requestQuery);
     const careReportId = requestQueryToCamel.careReportId;
+    const userId = requestQueryToCamel.userId;
     const careReportSearchDto = {
       careReportId,
+      userId,
     };
+
+    if (!careReportId || !userId) {
+      return res.status(400).send({
+        success: false,
+        message: 'careReportId와 userId는 필수 입력값입니다.',
+      });
+    }
 
     const result = await careReportService.getCareReportById(
       careReportSearchDto,

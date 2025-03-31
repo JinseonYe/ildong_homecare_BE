@@ -1,4 +1,4 @@
-import { FieldPacket, RowDataPacket } from 'mysql2';
+import { FieldPacket, RowDataPacket, ResultSetHeader } from 'mysql2';
 import { pool } from '../config/db';
 
 // 작업 내역 등록
@@ -171,25 +171,34 @@ export const insertUploadedFile = async (
   }
 };
 
-// 작업 상태 수정하기
-export const updateCareStatus = async () => {
+// 작업 내역 id별로 작업 상태 수정하기
+export const updateCareStatusByReportId = async (
+  careStatusId: number,
+  careReportId: number,
+) => {
   let conn;
-  const activeStatus = 1;
+  const deleteStatus = 0;
+  const params = [careStatusId, deleteStatus, careReportId];
 
   try {
-    let sql = `
-        SELECT care_status_id, care_status_name
-        FROM t_care_status
-        WHERE is_active =?`;
+    const sql = `
+      UPDATE t_care_report 
+      SET care_status_id = ?
+      WHERE is_deleted = ? 
+      AND care_report_id = ?`;
 
     conn = await pool.getConnection();
 
-    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
-      sql,
-      activeStatus,
-    );
-    return rows;
+    // 결과 타입을 OkPacket으로 명시
+    const [result]: [ResultSetHeader, unknown] = await conn.query(sql, params);
+
+    if (result.affectedRows === 0) {
+      throw new Error('업데이트된 데이터가 없습니다.');
+    }
+
+    return result;
   } catch (err) {
+    console.log('상태 수정 중 오류:', err);
     throw err;
   } finally {
     if (conn) conn.release();

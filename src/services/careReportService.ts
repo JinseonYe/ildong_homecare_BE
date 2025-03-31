@@ -2,6 +2,7 @@ import * as careReportModel from '../models/careReportModel';
 import * as formatting from '../utils/formatting';
 import { pool } from '../config/db';
 import { FieldPacket, RowDataPacket } from 'mysql2';
+import * as buildingService from '../services/buildingService';
 
 // 작업내역 등록하기
 export const createCareReport = async (careReportInfo: any, files: any) => {
@@ -140,16 +141,22 @@ export const getCareReportById = async (careReportSearchDto: any) => {
     throw new Error('No search criteria provided');
   }
 
-  const { careReportId } = careReportSearchDto;
+  const { careReportId, userId } = careReportSearchDto;
 
   try {
     const fetchedData = await careReportModel.findCareReportById(careReportId);
     let result = await formmatFetchedAllCareReport(fetchedData);
-    if (result) {
-      return result;
-    } else {
-      return false;
+
+    if (!result || result.length === 0) {
+      return null;
     }
+
+    const buildingId = result[0].buildingId;
+
+    // 유저가 건물주인지 확인 후 상태 업데이트
+    await checkIsBuildingOwner(userId, buildingId, careReportId);
+
+    return result;
   } catch (error) {
     console.log(error);
   }
@@ -198,4 +205,36 @@ export const formmatFetchedAllCareReport = async (
   } catch (error) {
     console.log(error);
   }
+};
+
+// 조회하는 유저가 건물주인지 확인
+export const checkIsBuildingOwner = async (
+  userId: any,
+  buildingId: any,
+  careReportId: any,
+) => {
+  try {
+    const building = await buildingService.fetchBuildingById(buildingId);
+
+    if (!building || building.length === 0) {
+      throw new Error(`건물 ID ${buildingId}에 해당하는 정보가 없습니다.`);
+    }
+
+    const buildingOwnerId = building[0].userId;
+
+    // 건물주 확인
+    if (buildingOwnerId == userId) {
+      await updateCareStatusByReportId(careReportId); // 비동기 처리에 대해 await 사용
+    } else {
+      console.log('사용자는 건물주가 아닙니다.');
+    }
+  } catch (err) {
+    console.log('건물주 확인 중 오류:', err);
+  }
+};
+
+// id별로 작업 내역 상태 수정
+export const updateCareStatusByReportId = async (careReportId: any) => {
+  const careStatusId = 3; // 완료
+  careReportModel.updateCareStatusByReportId(careStatusId, careReportId);
 };
