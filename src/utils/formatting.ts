@@ -26,6 +26,11 @@ export const toCamelCase = <T>(data: T): T => {
     // 배열의 경우, 각 요소에 대해 재귀적으로 toCamelCase 적용
     return data.map((item) => toCamelCase(item)) as T;
   } else if (data !== null && typeof data === 'object') {
+    // Date 객체는 변환 없이 그대로 반환
+    if (data instanceof Date) {
+      return convertingTime(data) as T;
+    }
+
     // 객체의 경우, 각 키에 대해 카멜 케이스 변환 적용
     const newObj: Record<string, any> = {};
     for (const key in data) {
@@ -42,4 +47,12 @@ export const toCamelCase = <T>(data: T): T => {
     // 배열, 객체, 문자열이 아닌 경우 변환 없이 반환
     return data;
   }
+};
+
+// New Date() 를 DB에서 사용할 수 있는 스트링 형식으로 변환
+// ex) 2025-01-01T00:00:00.000Z -> 2025-01-01 00:00:00
+export const convertingTime = (date: Date) => {
+  const convertedTime = date.toISOString().slice(0, 19).replace('T', ' ');
+
+  return convertedTime;
 };
