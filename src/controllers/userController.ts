@@ -92,3 +92,37 @@ export const getUsers = async (req: Request, res: Response) => {
     });
   }
 };
+
+// id별로 유저 조회
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    // 쿼리 파라미터 추출 및 기본값 설정
+    const userId = req.query.userId;
+
+    // DTO 생성
+    const userSearchDto = {
+      userId,
+    };
+
+    // 카멜케이스로 변환
+    const convertedDto: any = formatting.toCamelCase(userSearchDto);
+
+    const result = await userService.getUserById(convertedDto);
+
+    if (result) {
+      return res.status(200).send({
+        success: true,
+        message: '회원 조회를 성공했습니다.',
+        data: result,
+      });
+    }
+  } catch (error) {
+    // 에러 처리
+    const errorMessage =
+      error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
+    return res.status(500).json({
+      success: false,
+      message: errorMessage,
+    });
+  }
+};

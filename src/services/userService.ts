@@ -85,3 +85,26 @@ export const getUsers = async (userDto: UserSearchDto) => {
     }
   }
 };
+
+// id별로 유저 조회
+export const getUserById = async (userDto: any) => {
+  // DTO 유효성 검사
+  if (!userDto) {
+    throw new Error('No search criteria provided');
+  }
+
+  const { userId } = userDto;
+
+  try {
+    const result = await userModel.findUserById(userId);
+    const resultToCamel = formatting.toCamelCase(result);
+    return resultToCamel;
+  } catch (error: unknown) {
+    // error를 Error 객체로 타입 단언
+    if (error instanceof Error) {
+      throw new Error(`Error while fetching users: ${error.message}`);
+    } else {
+      throw new Error('An unknown error occurred while fetching users');
+    }
+  }
+};

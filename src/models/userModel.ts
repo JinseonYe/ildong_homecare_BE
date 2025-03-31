@@ -77,3 +77,34 @@ export const findUsers = async (
     if (conn) conn.release();
   }
 };
+
+// id별로 유저 조회
+export const findUserById = async (userId: any) => {
+  let conn;
+  const deleteStatus = 0;
+  const params: any[] = [deleteStatus, userId];
+
+  try {
+    conn = await pool.getConnection();
+
+    let sql = `
+        SELECT u.user_id, prof.user_email, prof.user_name, prof.phone_number, 
+        prof.user_role, prof.is_approved, prof.activate_alarm
+        FROM t_user_profile AS prof
+        JOIN t_user AS u ON prof.user_id = u.user_id
+        WHERE u.is_deleted = ?
+        AND u.user_id = ?
+        `;
+
+    conn = await pool.getConnection();
+    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
+      sql,
+      params,
+    );
+    return rows;
+  } catch (err) {
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+};
