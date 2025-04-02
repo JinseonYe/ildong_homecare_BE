@@ -37,7 +37,7 @@ export const register = async (req: Request, res: Response) => {
 
 // Email 중복 확인 API
 export const verifyEmailDuplication = async (req: Request, res: Response) => {
-  const userEmail = req.body.userEmail;
+  const userEmail: any = req.query.userEmail;
   try {
     const isUserEmailAvailable = await authService.isUserEmailAvailable(
       userEmail,
