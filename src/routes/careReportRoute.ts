@@ -6,8 +6,8 @@ const router = express.Router();
 
 router.post(
   '/api/care-report',
-  uploadMiddleware.uploadMiddleware,
-  uploadMiddleware.uploadToFirebase,
+  uploadMiddleware.uploadToLocalMiddleware,
+  uploadMiddleware.uploadToLocal,
   careReportController.createCareReport,
 );
 router.get('/api/care-status', careReportController.getAllCareStatus);
