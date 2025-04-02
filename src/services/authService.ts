@@ -16,6 +16,7 @@ export const hashing = async (passowrd: string) => {
 export const createUserWithTransaction = async (data: any) => {
   const hashedPassword = await hashing(data.password);
   data.password = hashedPassword; // 비밀번호 해싱하고 data에 다시 삽입
+  const isApproved = data.isApproved;
 
   const conn = await pool.getConnection();
   await conn.beginTransaction();
@@ -24,6 +25,11 @@ export const createUserWithTransaction = async (data: any) => {
     let userId = await authModel.createUser(conn, data, createdAt); // 유저 생성해서 유저id 추출
     await authModel.insertUserInfo(conn, data, userId, createdAt); // 유저 상세 정보
     await authModel.insertUserPasswordInfo(conn, data, userId); // 유저 비밀번호
+
+    // 승인 여부가 있으면 업데이트 (관리자가 가입 시켰을 시)
+    if (isApproved) {
+      await authModel.updateApprovalStatus(conn, isApproved, userId);
+    }
 
     await conn.commit(); // 모든 작업이 성공하면 커밋
     return { success: true };

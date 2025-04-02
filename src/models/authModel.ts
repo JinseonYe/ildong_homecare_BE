@@ -102,3 +102,19 @@ export const insertRefreshToken = async (
     if (conn) conn.release();
   }
 };
+
+// 승인 여부 업데이트
+export const updateApprovalStatus = async (
+  conn: any,
+  isApproved: any,
+  userId: any,
+) => {
+  const params = [isApproved, userId];
+
+  const sql = `
+    UPDATE t_user_profile SET is_approved =? 
+      WHERE user_id =? 
+    `;
+
+  await conn.query(sql, params);
+};
