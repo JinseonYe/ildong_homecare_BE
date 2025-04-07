@@ -2,6 +2,7 @@ import admin from 'firebase-admin';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fcmModel from '../models/fcmModel';
+import * as formatting from '../utils/formatting';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,11 +33,28 @@ export default connect;
 
 // FCM 토큰 저장
 export const saveFCMToken = async (userId: any, fcmToken: any) => {
-  // 유효성 검사
-  if (!userId || !fcmToken) {
-    return false;
-  }
+  try {
+    // 유효성 검사
+    if (!userId || !fcmToken) {
+      return false;
+    }
 
-  const result = await fcmModel.saveFCMToken(userId, fcmToken);
-  return result;
+    let existTokens = await fcmModel.findFCMTokenByUserId(userId);
+    existTokens = formatting.toCamelCase(existTokens);
+
+    const isTokenExist = existTokens.some(
+      (item: any) => item.fcmToken === fcmToken,
+    );
+
+    if (isTokenExist) {
+      return true;
+    }
+
+    // 새로운 토큰이면 저장
+    const result = await fcmModel.saveFCMToken(userId, fcmToken);
+
+    return result;
+  } catch (error) {
+    throw error;
+  }
 };
