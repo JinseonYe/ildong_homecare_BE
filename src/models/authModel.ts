@@ -6,8 +6,8 @@ export const createUser = async (conn: any, data: any, createdAt: Date) => {
   const sql = 'INSERT INTO t_user (user_email, created_at) VALUES (?, ?)';
   await conn.query(sql, [data.userEmail, createdAt]);
 
-  const [result] = await conn.query('SELECT LAST_INSERT_ID() AS userCode');
-  return result[0].userCode; // 자동 생성된 user_code 반환
+  const [result] = await conn.query('SELECT LAST_INSERT_ID() AS userId');
+  return result[0].userId; // 자동 생성된 user_id 반환
 };
 
 // DB에 사용자 정보 삽입

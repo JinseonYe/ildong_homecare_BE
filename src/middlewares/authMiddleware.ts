@@ -36,7 +36,7 @@ export const createToken = (
 
 // 디코딩된 토큰을 DB의 정보와 일치하는지 유효성 검사
 const validateTokenInfo = async (decodedToken: JwtPayload) => {
-  const decodedTokenInfo = [decodedToken.userCode, decodedToken.userEmail];
+  const decodedTokenInfo = [decodedToken.userId, decodedToken.userEmail];
   let conn;
 
   try {
@@ -135,7 +135,7 @@ export const refreshTokenMiddleware = async (req: Request, res: Response) => {
 
       // Refresh 토큰이 유효한 경우, 새로운 Access 토큰 발급
       const newAccessToken = JWT.sign(
-        { userCode: (decodedRefreshToken as any).userCode },
+        { userId: (decodedRefreshToken as any).userId },
         secretKey,
         { expiresIn: '1d' },
       );
