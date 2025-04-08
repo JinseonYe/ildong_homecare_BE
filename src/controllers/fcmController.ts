@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import admin from 'firebase-admin';
+import { getMessaging } from 'firebase-admin/messaging';
 import * as fcmService from '../services/fcmService';
 import * as fcmModel from '../models/fcmModel';
 import * as formatting from '../utils/formatting';
@@ -13,18 +13,17 @@ export const sendNotification = async (req: Request, res: Response) => {
     fcmTokenArr = formatting.toCamelCase(fcmTokenArr);
 
     if (!fcmTokenArr.length) {
-      return res.status(404).json({ error: 'User or FCM token not found' }); // 토큰 누락 시 에러 반환
+      return res.status(404).json({ error: 'User or FCM token not found' });
     }
 
-    const fcmToken = fcmTokenArr[0].fcmToken;
-    console.log(fcmToken);
+    const fcmTokenList = fcmTokenArr.map((tokenObj) => tokenObj.fcmToken);
 
     const message = {
-      token: fcmToken, // ✅ 'fcmToken' → 'token' 으로 변경
       notification: {
         title,
         body,
       },
+      tokens: fcmTokenList, // 다중 토큰 처리
       android: {
         notification: {
           title,
@@ -42,9 +41,13 @@ export const sendNotification = async (req: Request, res: Response) => {
       },
     };
 
-    await admin.messaging().send(message);
+    const response = await getMessaging().sendEachForMulticast(message);
 
-    res.status(200).json({ message: 'Successfully sent notification!' });
+    res.status(200).json({
+      message: 'Successfully sent notification!',
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    });
   } catch (err: any) {
     console.error('FCM send error:', err);
     res
