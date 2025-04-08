@@ -17,12 +17,17 @@ dotenv.config();
 // 현재 파일의 경로를 가져오기 위해 fileURLToPath 사용
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const serviceAccountPath = path.resolve(
+  __dirname,
+  '..',
+  'config',
+  'firebase-key.json',
+);
+const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
 
 // Firebase Admin SDK 초기화
 admin.initializeApp({
-  credential: admin.credential.cert(
-    path.join(__dirname, '..', 'config', 'firebase-key.json'),
-  ),
+  credential: admin.credential.cert(serviceAccount),
   storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // Firebase Storage 버킷 주소로 수정
 });
 
