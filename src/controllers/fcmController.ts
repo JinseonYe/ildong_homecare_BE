@@ -7,52 +7,28 @@ import * as formatting from '../utils/formatting';
 // 푸시 알림 보내기
 export const sendNotification = async (req: Request, res: Response) => {
   try {
-    const { title, body, userId } = req.body;
+    const { userId, title, body } = req.body;
 
-    let fcmTokenArr = await fcmModel.findFCMTokenByUserId(userId);
-    fcmTokenArr = formatting.toCamelCase(fcmTokenArr);
-
-    if (!fcmTokenArr.length) {
-      return res.status(404).json({ error: 'User or FCM token not found' });
-    }
-
-    const fcmTokenList = fcmTokenArr.map((tokenObj) => tokenObj.fcmToken);
-
-    const message = {
-      notification: {
-        title,
-        body,
-      },
-      tokens: fcmTokenList, // 다중 토큰 처리
-      android: {
-        notification: {
-          title,
-          body,
-        },
-      },
-      apns: {
-        payload: {
-          aps: {
-            alert: { title, body },
-            sound: 'default',
-            contentAvailable: true,
-          },
-        },
-      },
-    };
-
-    const response = await getMessaging().sendEachForMulticast(message);
+    const result = await fcmService.sendNotificationService(
+      userId,
+      title,
+      body,
+    );
 
     res.status(200).json({
+      success: true,
       message: 'Successfully sent notification!',
-      successCount: response.successCount,
-      failureCount: response.failureCount,
+      data: {
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+      },
     });
   } catch (err: any) {
     console.error('FCM send error:', err);
-    res
-      .status(err.status || 500)
-      .json({ message: err.message || 'Something went wrong!' });
+    res.status(err.status || 500).json({
+      success: false,
+      message: err.message || 'Something went wrong!',
+    });
   }
 };
 
@@ -70,9 +46,11 @@ export const saveFCMToken = async (req: Request, res: Response) => {
     }
 
     // FCM 토큰을 저장한 후 성공 응답
-    res.status(200).json({ message: 'FCM token saved successfully' });
+    res
+      .status(200)
+      .json({ success: true, message: 'FCM token saved successfully' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to save FCM token' });
+    res.status(500).json({ success: false, error: 'Failed to save FCM token' });
   }
 };
