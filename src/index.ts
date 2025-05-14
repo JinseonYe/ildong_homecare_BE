@@ -1,4 +1,5 @@
 import app from './app';
+import https from 'https';
 import http from 'http';
 import dotenv from 'dotenv';
 import fcmConnection from './services/fcmService';
@@ -7,8 +8,6 @@ import fs from 'fs';
 import path from 'path';
 
 dotenv.config();
-
-const BACKEND_PORT = parseInt(process.env.BACKEND_PORT || '51111', 10);
 
 // 현재 모듈의 URL로부터 __dirname을 구하는 함수
 const __filename = fileURLToPath(import.meta.url); // 현재 모듈의 URL을 파일 경로로 변환
@@ -23,9 +22,38 @@ if (!fs.existsSync(uploadDir)) {
   console.log(`📁 Created directory: ${uploadDir}`);
 }
 
-const httpServer = http.createServer(app);
+const BACKEND_PORT = parseInt(process.env.BACKEND_PORT || '51111', 10);
+const SERVER_TYPE = process.env.SERVER_TYPE; // 서버 타입 (http or https)
+
 fcmConnection();
 
-httpServer.listen(BACKEND_PORT, '0.0.0.0', () => {
-  console.log(`HTTP Server running on port ${BACKEND_PORT}!`);
-});
+if (SERVER_TYPE === 'http') {
+  const httpServer = http.createServer(app);
+
+  // HTTP 서버 실행
+  httpServer.listen(BACKEND_PORT, '0.0.0.0', () => {
+    console.log(`🚀 HTTP Server running on port ${BACKEND_PORT}!`);
+  });
+} else if (SERVER_TYPE === 'https') {
+  try {
+    // SSL 인증서 옵션 설정
+    const options = {
+      key: fs.readFileSync(
+        '/etc/letsencrypt/live/onehc.logicinfuse.com/privkey.pem',
+      ),
+      cert: fs.readFileSync(
+        '/etc/letsencrypt/live/onehc.logicinfuse.com/fullchain.pem',
+      ),
+    };
+
+    const httpsServer = https.createServer(options, app); // HTTPS 서버 생성
+    // HTTPS 서버 실행
+    httpsServer.listen(BACKEND_PORT, '0.0.0.0', () => {
+      console.log(`🚀 HTTPS Server running on port ${BACKEND_PORT}!`);
+    });
+  } catch (error) {
+    console.error('❌ HTTPS 서버 실행 중 에러 발생:', error);
+  }
+} else {
+  console.log('올바른 서버가 아닙니다.');
+}
