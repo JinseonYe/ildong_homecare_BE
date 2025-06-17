@@ -21,6 +21,26 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
 
     const careReportId = result.insertId; // 생성된 `care_report_id`
     const careCategoryIds = careReportInfo.careCategoryIds;
+    console.log(careCategoryIds);
+    console.log(typeof careCategoryIds);
+
+    // ✅ careCategoryIds 유효성 검사 및 변환
+    let processedCategoryIds;
+    if (typeof careCategoryIds === 'string') {
+      try {
+        processedCategoryIds = JSON.parse(careCategoryIds);
+      } catch (e) {
+        throw new Error('careCategoryIds는 유효한 배열 형식이어야 합니다.');
+      }
+    } else {
+      processedCategoryIds = careCategoryIds;
+    }
+
+    if (!Array.isArray(processedCategoryIds)) {
+      throw new Error('careCategoryIds는 배열이어야 합니다.');
+    }
+
+    console.log('careCategoryIds', processedCategoryIds);
 
     // 업로드된 파일 정보 삽입 (파일이 여러 개 있을 경우)
     if (Array.isArray(files)) {
@@ -39,15 +59,15 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
     }
 
     // 카테고리 ID 유효성 체크 후 삽입
-    if (careCategoryIds?.length > 0) {
+    if (processedCategoryIds?.length > 0) {
       const validCategoryIds = await careReportModel.getValidCareCategoryIds(
         conn,
-        careCategoryIds,
+        processedCategoryIds,
       );
 
-      const careCategoryIdsArray = careCategoryIds.split(',').map(Number);
+      // const careCategoryIdsArray = careCategoryIds.split(',').map(Number);
       const validCategorySet = new Set(validCategoryIds);
-      const invalidCategoryIds = careCategoryIdsArray.filter(
+      const invalidCategoryIds = processedCategoryIds.filter(
         // 유효하지 않은 ID 찾기
         (id: any) => !validCategorySet.has(id),
       );
