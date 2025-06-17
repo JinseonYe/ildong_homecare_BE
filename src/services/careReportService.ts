@@ -21,8 +21,6 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
 
     const careReportId = result.insertId; // 생성된 `care_report_id`
     const careCategoryIds = careReportInfo.careCategoryIds;
-    console.log(careCategoryIds);
-    console.log(typeof careCategoryIds);
 
     // ✅ careCategoryIds 유효성 검사 및 변환
     let processedCategoryIds;
@@ -39,8 +37,6 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
     if (!Array.isArray(processedCategoryIds)) {
       throw new Error('careCategoryIds는 배열이어야 합니다.');
     }
-
-    console.log('careCategoryIds', processedCategoryIds);
 
     // 업로드된 파일 정보 삽입 (파일이 여러 개 있을 경우)
     if (Array.isArray(files)) {

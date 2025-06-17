@@ -101,7 +101,10 @@ export const findCareReports = async (
       SELECT 
         cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, b.building_name,
         cr.title, cr.care_content, cr.care_comment, 
-        GROUP_CONCAT(crc.care_category_id ORDER BY crc.care_category_id SEPARATOR ', ') AS care_categories, cr.created_at
+        GROUP_CONCAT(crc.care_category_id ORDER BY crc.care_category_id SEPARATOR ', ') AS care_categories,
+        (SELECT file_name FROM t_file_upload WHERE care_report_id = cr.care_report_id LIMIT 1) AS file_name,
+        (SELECT file_url FROM t_file_upload WHERE care_report_id = cr.care_report_id LIMIT 1) AS file_url,
+        cr.created_at
       FROM t_care_report AS cr
       LEFT JOIN t_care_report_category AS crc 
         ON cr.care_report_id = crc.care_report_id
@@ -125,7 +128,7 @@ export const findCareReports = async (
       params.push(endDate);
     }
 
-    sql += ` GROUP BY cr.care_report_id ORDER BY cr.care_report_id`;
+    sql += ` GROUP BY cr.care_report_id ORDER BY cr.created_at DESC`;
 
     // 페이지네이션 적용
     if (pageSize !== undefined && offset !== undefined) {
