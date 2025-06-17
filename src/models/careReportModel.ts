@@ -217,7 +217,8 @@ export const findCareReportById = async (careReportId: any) => {
       SELECT 
         cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, 
         cr.title, cr.care_content, cr.care_comment, 
-        fu.file_name, fu.file_url,
+        GROUP_CONCAT(DISTINCT fu.file_name) AS file_name,
+        GROUP_CONCAT(DISTINCT fu.file_url) AS file_url,
         GROUP_CONCAT(DISTINCT crc.care_category_id ORDER BY crc.care_category_id) AS care_category_ids
       FROM t_care_report AS cr
       LEFT JOIN t_care_report_category AS crc 
@@ -225,7 +226,8 @@ export const findCareReportById = async (careReportId: any) => {
       LEFT JOIN t_file_upload AS fu
         ON cr.care_report_id = fu.care_report_id
       WHERE cr.is_deleted = ?
-      AND cr.care_report_id = ?
+        AND cr.care_report_id = ?
+      GROUP BY cr.care_report_id
       ORDER BY cr.care_report_id;
      `;
 
