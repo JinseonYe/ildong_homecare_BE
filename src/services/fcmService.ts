@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import * as fcmModel from '../models/fcmModel';
 import * as formatting from '../utils/formatting';
 import { getMessaging } from 'firebase-admin/messaging';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,12 +15,14 @@ const serviceAccountPath = path.resolve(
   'firebase-key.json',
 );
 
+const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+
 // FCM 커넥트
 const connect = () => {
   try {
     if (admin.apps.length === 0) {
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccountPath),
+        credential: admin.credential.cert(serviceAccount),
       });
       console.log('FCM Initialized Successfully');
     } else {
@@ -71,6 +74,23 @@ const chunkArray = (array: string[], size: number) => {
   return result;
 };
 
+// FCM 토큰 유효성 검증
+export const validateFCMToken = async (token: string) => {
+  try {
+    const response = await getMessaging().send({
+      token,
+      notification: {
+        title: 'Token Validation',
+        body: 'This is a validation message',
+      },
+    });
+    return true;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return false;
+  }
+};
+
 // 실제 FCM 전송 담당
 export const sendFCMNotification = async (
   tokens: string[],
@@ -79,8 +99,25 @@ export const sendFCMNotification = async (
 ) => {
   let successCount = 0;
   let failureCount = 0;
+  let validTokens: string[] = [];
 
-  const tokenChunks = chunkArray(tokens, MAX_FCM_LIMIT);
+  // 토큰 유효성 검증
+  for (const token of tokens) {
+    const isValid = await validateFCMToken(token);
+    if (isValid) {
+      validTokens.push(token);
+    } else {
+      console.log(`Invalid token: ${token}`);
+      // 유효하지 않은 토큰은 DB에서 삭제하는 로직을 추가할 수 있습니다
+      // await fcmModel.deleteInvalidToken(token);
+    }
+  }
+
+  if (validTokens.length === 0) {
+    throw new Error('No valid FCM tokens found');
+  }
+
+  const tokenChunks = chunkArray(validTokens, MAX_FCM_LIMIT);
 
   for (const chunk of tokenChunks) {
     const message = {
