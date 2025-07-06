@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import * as authService from '../services/authService';
 import * as authModel from '../models/authModel';
 import * as authMiddleware from '../middlewares/authMiddleware';
+import * as deviceService from '../services/deviceService';
 
 // 회원가입 API
 export const register = async (req: Request, res: Response) => {
@@ -67,7 +68,7 @@ export const verifyEmailDuplication = async (req: Request, res: Response) => {
 
 // 로그인 API
 export const login = async (req: Request, res: Response) => {
-  const { userEmail, password } = req.body;
+  const { userEmail, password, deviceInfo } = req.body;
 
   try {
     // 이메일이 일치하는 사용자가 있는지 확인
@@ -90,6 +91,21 @@ export const login = async (req: Request, res: Response) => {
       return res
         .status(400)
         .send({ success: false, message: '비밀번호가 일치하지 않습니다.' });
+    }
+
+    // 로그인한 유저별 디바이스 정보 관리
+    if (deviceInfo) {
+      const isDeviceInfoProcessed = await deviceService.processDeviceInfo(
+        userId,
+        deviceInfo,
+      );
+
+      if (!isDeviceInfoProcessed) {
+        return res.status(400).send({
+          success: false,
+          message: '디바이스 정보 처리에 실패했습니다.',
+        });
+      }
     }
 
     const secretKey = process.env.SECRET_KEY ?? '';
