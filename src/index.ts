@@ -2,7 +2,7 @@ import app from './app';
 import https from 'https';
 import http from 'http';
 import dotenv from 'dotenv';
-import fcmConnection from './services/fcmService';
+import fcmConnection from './services/pushService';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import path from 'path';

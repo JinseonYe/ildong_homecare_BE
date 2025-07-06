@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import * as fcmService from '../services/fcmService';
+import * as pushService from '../services/pushService';
 
 // 푸시 알림 보내기
 export const sendNotification = async (req: Request, res: Response) => {
   try {
     const { userId, title, body } = req.body;
 
-    const result = await fcmService.sendNotificationService(
+    const result = await pushService.sendNotificationService(
       userId,
       title,
       body,

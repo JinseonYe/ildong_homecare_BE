@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import * as fcmModel from '../models/fcmModel';
+import * as pushModel from '../models/pushModel';
 import * as deviceModel from '../models/deviceModel';
 import * as formatting from '../utils/formatting';
 import { getMessaging } from 'firebase-admin/messaging';
@@ -46,8 +46,8 @@ const chunkArray = (array: string[], size: number) => {
   return result;
 };
 
-// FCM 토큰 유효성 검증
-export const validateFCMToken = async (token: string) => {
+// push 토큰 유효성 검증
+export const validatePushToken = async (token: string) => {
   try {
     await getMessaging().send({
       token,
@@ -75,7 +75,7 @@ export const sendFCMNotification = async (
 
   // 토큰 유효성 검증
   for (const token of tokens) {
-    const isValid = await validateFCMToken(token);
+    const isValid = await validatePushToken(token);
     if (isValid) {
       validTokens.push(token);
     } else {
@@ -141,7 +141,7 @@ export const sendNotificationService = async (
     throw new Error('FCM push notification failed');
   }
 
-  await fcmModel.insertNotificationLog({
+  await pushModel.insertNotificationLog({
     userId,
     title,
     body,

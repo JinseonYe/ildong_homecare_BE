@@ -3,7 +3,7 @@ import cors from 'cors';
 import buildingRoute from './routes/buildingRoute';
 import careReportRoute from './routes/careReportRoute';
 import authRoute from './routes/authRoute';
-import fcmRoute from './routes/fcmRoute';
+import pushRoute from './routes/pushRoute';
 import userRoute from './routes/userRoute';
 
 const app = express();
@@ -13,7 +13,7 @@ app.use(express.json());
 app.use('/', buildingRoute);
 app.use('/', careReportRoute);
 app.use('/', authRoute);
-app.use('/', fcmRoute);
+app.use('/', pushRoute);
 app.use('/', userRoute);
 
 export default app;
