@@ -13,8 +13,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url); // 현재 모듈의 URL을 파일 경로로 변환
 const __dirname = path.dirname(__filename); // 파일 경로에서 디렉토리 경로만 추출
 
-// uploads 폴더 경로 설정 (현재 파일 위치 기준)
-const uploadDir = path.join(__dirname, '/uploads');
+// uploads 폴더 경로 설정 (프로젝트 루트 기준)
+const uploadDir = path.join(process.cwd(), 'uploads');
 
 // 서버 시작 전에 uploads 디렉토리가 존재하는지 확인하고, 없으면 생성
 if (!fs.existsSync(uploadDir)) {

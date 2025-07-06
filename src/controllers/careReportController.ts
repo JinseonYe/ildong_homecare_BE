@@ -4,25 +4,20 @@ import * as formatting from '../utils/formatting';
 
 // 작업내역 등록하기
 export const createCareReport = async (req: Request, res: Response) => {
-  const careReportInfo = req.body;
-  const fileNameUrl = careReportInfo.fileNameUrl;
-  let files: any;
+  const body = req.body;
+  const originalFiles = req.files;
+  let files: string[] = [];
 
-  if (Array.isArray(fileNameUrl)) {
-    // fileName과 fileUrl을 객체 형태로 담기
-    files = fileNameUrl.map((file: { fileName: string; fileUrl: string }) => ({
-      fileName: file.fileName,
-      fileUrl: file.fileUrl,
-    }));
+  console.log('originalFiles', originalFiles);
+
+  if (Array.isArray(originalFiles)) {
+    files = originalFiles.map((originalFile) => originalFile.path);
   } else {
     console.log('파일이 업로드되지 않았습니다.');
   }
 
   try {
-    const result = await careReportService.createCareReport(
-      careReportInfo,
-      files,
-    );
+    const result = await careReportService.createCareReport(body, files);
 
     if (result) {
       return res.status(201).send({

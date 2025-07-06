@@ -20,11 +20,11 @@ export const toSnakeCase = <T>(data: T): T => {
   }
 };
 
-// 스네이크케이스를 카멜케이스로 변환하는 메소드
-export const toCamelCase = <T>(data: T): T => {
+// 스네이크케이스를 카멜케이스로 변환하는 메소드 (특정 필드는 value 변환 제외 가능)
+export const toCamelCase = <T>(data: T, excludeFields: string[] = []): T => {
   if (Array.isArray(data)) {
     // 배열의 경우, 각 요소에 대해 재귀적으로 toCamelCase 적용
-    return data.map((item) => toCamelCase(item)) as T;
+    return data.map((item) => toCamelCase(item, excludeFields)) as T;
   } else if (data !== null && typeof data === 'object') {
     // Date 객체는 변환 없이 그대로 반환
     if (data instanceof Date) {
@@ -37,7 +37,16 @@ export const toCamelCase = <T>(data: T): T => {
       const camelKey = key.replace(/_([a-z])/g, (_, letter) =>
         letter.toUpperCase(),
       );
-      newObj[camelKey] = toCamelCase((data as Record<string, any>)[key]); // 속성 값에 대해서도 재귀 호출
+
+      // 제외 필드는 key는 변환하되, value는 그대로 유지
+      if (excludeFields.includes(key)) {
+        newObj[camelKey] = (data as Record<string, any>)[key];
+      } else {
+        newObj[camelKey] = toCamelCase(
+          (data as Record<string, any>)[key],
+          excludeFields,
+        ); // 속성 값에 대해서도 재귀 호출
+      }
     }
     return newObj as T;
   } else if (typeof data === 'string') {

@@ -149,31 +149,6 @@ export const findCareReports = async (
   }
 };
 
-// 업로드된 파일 url 삽입
-export const insertUploadedFile = async (
-  conn: any,
-  careReportId: any,
-  fileName: any,
-  fileUrl: any,
-  createdAt: any,
-) => {
-  try {
-    let sql = `
-    INSERT INTO t_file_upload (care_report_id, file_name, file_url, created_at) 
-        VALUES (?, ?, ?, ?);`;
-
-    const [result]: any = await conn.query(sql, [
-      careReportId,
-      fileName,
-      fileUrl,
-      createdAt,
-    ]);
-    return result;
-  } catch (error) {
-    throw error;
-  }
-};
-
 // 작업 내역 id별로 작업 상태 수정하기
 export const updateCareStatusByReportId = async (
   careStatusId: number,
@@ -218,19 +193,17 @@ export const findCareReportById = async (careReportId: any) => {
   try {
     let sql = `
       SELECT 
-        cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, 
-        cr.title, cr.care_content, cr.care_comment, 
-        GROUP_CONCAT(DISTINCT fu.file_name) AS file_name,
-        GROUP_CONCAT(DISTINCT fu.file_url) AS file_url,
+        cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, cr.title,
+        cr.care_content, cr.care_comment, fu.file_name, fu.file_url,
         GROUP_CONCAT(DISTINCT crc.care_category_id ORDER BY crc.care_category_id) AS care_category_ids
-      FROM t_care_report AS cr
-      LEFT JOIN t_care_report_category AS crc 
-        ON cr.care_report_id = crc.care_report_id
-      LEFT JOIN t_file_upload AS fu
+      FROM t_care_report cr
+      LEFT JOIN t_file_upload fu
         ON cr.care_report_id = fu.care_report_id
+      LEFT JOIN t_care_report_category crc
+        ON cr.care_report_id = crc.care_report_id
       WHERE cr.is_deleted = ?
         AND cr.care_report_id = ?
-      GROUP BY cr.care_report_id
+      GROUP BY cr.care_report_id, fu.file_name, fu.file_url
       ORDER BY cr.care_report_id;
      `;
 
@@ -239,10 +212,39 @@ export const findCareReportById = async (careReportId: any) => {
       sql,
       params,
     );
+
+    console.log('rows', rows);
+
     return rows;
   } catch (err) {
     throw err;
   } finally {
     if (conn) conn.release();
   }
+};
+
+// DB에 파일 정보 삽입
+export const insertDocumentInfo = async (
+  conn: any,
+  userId: number,
+  fileInfo: any,
+  careReportId: number,
+  createdAt: Date,
+) => {
+  const params = [
+    userId,
+    careReportId,
+    fileInfo.fileHash,
+    fileInfo.fileName,
+    fileInfo.fileExtension,
+    fileInfo.filePath,
+    fileInfo.fileFullPath,
+    fileInfo.fileUrl,
+    createdAt,
+  ];
+  const sql = `INSERT INTO t_file_upload (user_id, care_report_id, file_hash, file_name, file_extension, file_path, 
+    file_full_path, file_url, created_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+  await conn.query(sql, params);
 };
