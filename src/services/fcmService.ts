@@ -2,6 +2,7 @@ import admin from 'firebase-admin';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fcmModel from '../models/fcmModel';
+import * as deviceModel from '../models/deviceModel';
 import * as formatting from '../utils/formatting';
 import { getMessaging } from 'firebase-admin/messaging';
 import fs from 'fs';
@@ -35,35 +36,6 @@ const connect = () => {
 
 export default connect;
 
-// FCM 토큰 저장
-// TODO: userId 대신 refreshtoken 받아서 유저 토큰이랑 비교할지 보고 수정완료하기
-export const saveFCMToken = async (userId: any, fcmToken: any) => {
-  try {
-    // 유효성 검사
-    if (!userId || !fcmToken) {
-      return false;
-    }
-
-    let existTokens = await fcmModel.findFCMTokenByUserId(userId);
-    existTokens = formatting.toCamelCase(existTokens);
-
-    const isTokenExist = existTokens.some(
-      (item: any) => item.fcmToken === fcmToken,
-    );
-
-    if (isTokenExist) {
-      return true;
-    }
-
-    // 새로운 토큰이면 저장
-    const result = await fcmModel.saveFCMToken(userId, fcmToken);
-
-    return result;
-  } catch (error) {
-    throw error;
-  }
-};
-
 const MAX_FCM_LIMIT = 500;
 
 const chunkArray = (array: string[], size: number) => {
@@ -77,7 +49,7 @@ const chunkArray = (array: string[], size: number) => {
 // FCM 토큰 유효성 검증
 export const validateFCMToken = async (token: string) => {
   try {
-    const response = await getMessaging().send({
+    await getMessaging().send({
       token,
       notification: {
         title: 'Token Validation',
@@ -143,23 +115,24 @@ export const sendFCMNotification = async (
   return { successCount, failureCount };
 };
 
-// 서비스 레이어 (비즈니스 로직)
+// push 알림 보내기
 export const sendNotificationService = async (
   userId: number,
   title: string,
   body: string,
 ) => {
-  const fcmTokenArr = await fcmModel.findFCMTokenByUserId(userId);
-  if (!fcmTokenArr.length) {
-    throw new Error('User or FCM token not found');
+  const pushTokenArr = await deviceModel.findPushTokenInfoByUserId(userId);
+
+  if (!pushTokenArr.length) {
+    throw new Error('User or push token not found');
   }
 
-  const fcmTokenList = formatting
-    .toCamelCase(fcmTokenArr)
-    .map((tokenObj) => tokenObj.fcmToken);
+  const pushTokenList = formatting
+    .toCamelCase(pushTokenArr)
+    .map((tokenObj: any) => tokenObj.pushToken);
 
   const { successCount, failureCount } = await sendFCMNotification(
-    fcmTokenList,
+    pushTokenList,
     title,
     body,
   );
@@ -172,7 +145,7 @@ export const sendNotificationService = async (
     userId,
     title,
     body,
-    tokens: JSON.stringify(fcmTokenList),
+    tokens: JSON.stringify(pushTokenList),
     successCount,
     failureCount,
   });

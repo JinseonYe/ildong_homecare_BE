@@ -30,12 +30,36 @@ export const insertDeviceInfo = async (userId: any, deviceInfo: any) => {
 export const findDeviceInfoByUserId = async (userId: any, deviceUUID: any) => {
   let conn;
   const params = [userId, deviceUUID];
+  console.log('params', params);
+
   try {
     let sql = `
       SELECT * FROM t_user_device 
       WHERE user_id = ?
       AND device_uuid = ?
       `;
+
+    conn = await pool.getConnection();
+
+    const [result]: any = await conn.query(sql, params);
+
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 푸시 토큰 정보 조회
+export const findPushTokenInfoByUserId = async (userId: any) => {
+  let conn;
+  const params = [userId];
+  console.log('params', params);
+
+  try {
+    let sql = `
+        SELECT push_token FROM t_user_device 
+        WHERE user_id = ?
+        `;
 
     conn = await pool.getConnection();
 
