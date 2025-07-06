@@ -140,3 +140,6 @@ dist
 
 # .gitignore에 추가하여 서비스 계정 키 파일을 Git에 포함되지 않도록 설정
 src/config/firebase-key.json
+
+# certs 폴더의 정보를 git에 포함하지 않도록 설정
+certs/*
