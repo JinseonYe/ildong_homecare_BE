@@ -6,6 +6,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { FieldPacket, RowDataPacket } from 'mysql2';
 import * as buildingService from '../services/buildingService';
+import * as generateQuery from '../utils/generateQuery';
 
 // 작업내역 등록하기
 export const createCareReport = async (careReportInfo: any, files: any) => {
@@ -221,13 +222,11 @@ export const getCareReports = async (careReportSearchDto: any) => {
 };
 
 // Id별로 작업 내역 조회하기
-export const getCareReportById = async (careReportSearchDto: any) => {
+export const getCareReportById = async (careReportId: any) => {
   // DTO 유효성 검사
-  if (!careReportSearchDto) {
+  if (!careReportId) {
     throw new Error('No search criteria provided');
   }
-
-  const { careReportId, userId } = careReportSearchDto;
 
   try {
     const fetchedData = await careReportModel.findCareReportById(careReportId);
@@ -240,7 +239,8 @@ export const getCareReportById = async (careReportSearchDto: any) => {
     const buildingId = result[0].buildingId;
 
     // 유저가 건물주인지 확인 후 상태 업데이트
-    await checkIsBuildingOwner(userId, buildingId, careReportId);
+    // TODO 토큰으로 정보를 받아오게 되면 그 때 userId 추출해서 판단하도록 수정
+    // await checkIsBuildingOwner(userId, buildingId, careReportId);
 
     return result;
   } catch (error) {
@@ -260,9 +260,7 @@ export const formmatFetchedAllCareReport = async (
       'file_name',
       'file_url',
     ]);
-
-    console.log('fetchedData', fetchedData);
-
+    
     fetchedData.forEach(
       ({ careReportId, fileName, fileUrl, careCategoryId, ...row }) => {
         // careReportId가 없으면 새로 생성
@@ -328,4 +326,20 @@ export const checkIsBuildingOwner = async (
 export const updateCareStatusByReportId = async (careReportId: any) => {
   const careStatusId = 3; // 완료
   careReportModel.updateCareStatusByReportId(careStatusId, careReportId);
+};
+
+// 작업 내역 수정
+export const updateCareReport = async (careReportId: any, updateData: any) => {
+  try {
+    const { setQuery, values } = generateQuery.generateUpdateQuery(updateData);
+    let result = await careReportModel.updateCareReport(careReportId, setQuery, values);
+
+    if (result.affectedRows > 0) {
+      return true;
+    } else {
+      return false; // 업데이트된 행이 없음
+    }
+  } catch (error) {
+    console.log('작업 내역 수정 실패: ', error);  
+  }
 };

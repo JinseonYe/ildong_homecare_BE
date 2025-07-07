@@ -97,21 +97,16 @@ export const getCareReportById = async (req: Request, res: Response) => {
     const requestQuery = req.query;
     const requestQueryToCamel = formatting.toCamelCase(requestQuery);
     const careReportId = requestQueryToCamel.careReportId;
-    const userId = requestQueryToCamel.userId;
-    const careReportSearchDto = {
-      careReportId,
-      userId,
-    };
 
-    if (!careReportId || !userId) {
+    if (!careReportId) {
       return res.status(400).send({
         success: false,
-        message: 'careReportId와 userId는 필수 입력값입니다.',
+        message: 'careReportId는 필수 입력값입니다.',
       });
     }
 
     const result = await careReportService.getCareReportById(
-      careReportSearchDto,
+      careReportId,
     );
 
     if (result) {
@@ -126,6 +121,41 @@ export const getCareReportById = async (req: Request, res: Response) => {
     return res.status(500).send({
       success: false,
       message: '서버 오류로 작업 내역 조회 실패',
+    });
+  }
+};
+
+export const updateCareReport = async (req: Request, res: Response) => {
+  try {
+    const updateData = req.body;
+    const careReportId = req.params.careReportId;
+
+    // 작업내역 ID 가 포함되었는지 확인
+    if (!careReportId) {
+      return res.status(400).send({
+        success: false,
+        message: '작업내역 ID가 필요합니다.',
+      });
+    }
+
+    const isUpdate = await careReportService.updateCareReport(careReportId, updateData);
+
+    if (isUpdate) {
+      const result = await careReportService.getCareReportById(careReportId);
+        
+      if (result) {
+      return res.status(200).send({
+        success: true,
+        message: '작업 내역 수정을 성공했습니다.',
+        data: result,
+      });
+    }
+  }
+  } catch (error) {
+    console.log('작업 내역 수정 실패: ', error);
+    return res.status(500).send({
+      success: false,
+      message: '서버 오류로 작업 내역 수정 실패',
     });
   }
 };

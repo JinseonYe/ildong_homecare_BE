@@ -193,14 +193,16 @@ export const findCareReportById = async (careReportId: any) => {
   try {
     let sql = `
       SELECT 
-        cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, cr.title,
-        cr.care_content, cr.care_comment, fu.file_name, fu.file_url,
+        cr.care_report_id, cr.user_id, cr.building_id, b.building_name, cr.care_status_id,
+        cr.title, cr.care_content, cr.care_comment, fu.file_name, fu.file_url,
         GROUP_CONCAT(DISTINCT crc.care_category_id ORDER BY crc.care_category_id) AS care_category_ids
       FROM t_care_report cr
       LEFT JOIN t_file_upload fu
         ON cr.care_report_id = fu.care_report_id
       LEFT JOIN t_care_report_category crc
         ON cr.care_report_id = crc.care_report_id
+      JOIN t_building b
+        ON cr.building_id = b.building_id
       WHERE cr.is_deleted = ?
         AND cr.care_report_id = ?
       GROUP BY cr.care_report_id, fu.file_name, fu.file_url
@@ -212,8 +214,6 @@ export const findCareReportById = async (careReportId: any) => {
       sql,
       params,
     );
-
-    console.log('rows', rows);
 
     return rows;
   } catch (err) {
@@ -247,4 +247,29 @@ export const insertDocumentInfo = async (
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
   await conn.query(sql, params);
+};
+
+// 작업 내역 수정
+export const updateCareReport = async (careReportId: any, setQuery: any, values: any) => {
+  let conn;
+  const time = new Date();
+  const deleteStatus = 0;
+  const params = [...values, time, deleteStatus, careReportId]
+
+  try {
+    const sql = `
+      UPDATE t_care_report SET ${setQuery}, modified_at =?
+      WHERE is_deleted = ?
+      AND care_report_id = ?
+    `;
+    
+    conn = await pool.getConnection();
+    const [result]: any = await conn.query(sql, params);
+
+    return result;
+  } catch (error) {
+    throw error;
+  } finally {
+    if (conn) conn.release();
+  }
 };

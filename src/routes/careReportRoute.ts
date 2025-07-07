@@ -13,5 +13,6 @@ router.post(
 router.get('/api/care-status', careReportController.getAllCareStatus);
 router.get('/api/care-reports', careReportController.getCareReports);
 router.get('/api/care-report', careReportController.getCareReportById);
+router.patch('/api/care-report/:careReportId', careReportController.updateCareReport);
 
 export default router;
