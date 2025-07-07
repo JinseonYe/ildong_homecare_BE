@@ -5,8 +5,9 @@ import { pool } from '../config/db';
 export const insertBuildingInfo = async (buildingInfo: any) => {
   let conn;
   const time = new Date();
-  const values = Object.values(buildingInfo);
-  values.push(time);
+
+  const { userId, buildingName, address } = buildingInfo;
+  const values = [userId, buildingName, address, time];
 
   try {
     let sql = `
