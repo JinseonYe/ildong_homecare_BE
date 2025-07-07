@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
 import * as careReportService from '../services/careReportService';
 import * as formatting from '../utils/formatting';
+import * as userService from '../services/userService';
+import * as pushService from '../services/pushService';
+import * as deviceModel from '../models/deviceModel';
 
 // 작업내역 등록하기
 export const createCareReport = async (req: Request, res: Response) => {
   const body = req.body;
+  const buildingId = req.body.buildingId;
+  const userId = req.body.userId;
   const originalFiles = req.files;
   let files: string[] = [];
-
-  console.log('originalFiles', originalFiles);
 
   if (Array.isArray(originalFiles)) {
     files = originalFiles.map((originalFile) => originalFile.path);
@@ -20,6 +23,36 @@ export const createCareReport = async (req: Request, res: Response) => {
     const result = await careReportService.createCareReport(body, files);
 
     if (result) {
+      // 빌딩 정보 조회
+      const buildingInfo = await userService.getBuildingInfo(buildingId);
+      const userInfo = await userService.getUserInfo(userId);
+      const admins = await userService.getAdmins()
+      const buildingOwnerId = buildingInfo.user_id; // 건물주
+      const buildingName = buildingInfo.building_name; // 건물명
+      const userName = userInfo.user_name; // 건물명
+
+      const title = `작업자: <${userName}> 님께서 건물명: <${buildingName}> 에 대한 작업내역이 등록하였습니다.`
+      const content = "테스트중임"
+
+      // 푸시 대상 userId 배열
+      const targetUserIds = [buildingOwnerId, ...admins.map(a => a.user_id)];
+      // FCM 토큰 수집
+      let allTokens: string[] = [];
+      for (const userId of targetUserIds) {
+        const tokens = await deviceModel.findPushTokenInfoByUserId(userId);
+        if (tokens && tokens.length > 0) {
+          allTokens.push(...tokens.map((t: any) => t.push_token || t.pushToken));
+        }
+      }
+      // 중복 제거
+      allTokens = [...new Set(allTokens)].filter(Boolean);
+      if (allTokens.length > 0) {
+        await pushService.sendFCMNotification(
+          allTokens,
+          title,
+          content
+        );
+      }
       return res.status(201).send({
         success: true,
         message: '작업 내역 등록을 성공했습니다.',

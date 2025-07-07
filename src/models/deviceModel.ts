@@ -30,7 +30,6 @@ export const insertDeviceInfo = async (userId: any, deviceInfo: any) => {
 export const findDeviceInfoByUserId = async (userId: any, deviceUUID: any) => {
   let conn;
   const params = [userId, deviceUUID];
-  console.log('params', params);
 
   try {
     let sql = `
@@ -53,7 +52,6 @@ export const findDeviceInfoByUserId = async (userId: any, deviceUUID: any) => {
 export const findPushTokenInfoByUserId = async (userId: any) => {
   let conn;
   const params = [userId];
-  console.log('params', params);
 
   try {
     let sql = `

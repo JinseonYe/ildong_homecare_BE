@@ -112,6 +112,10 @@ export const sendFCMNotification = async (
     failureCount += response.failureCount;
   }
 
+  console.log("successCount",successCount);
+  console.log("failureCount",failureCount);
+  
+
   return { successCount, failureCount };
 };
 

@@ -113,3 +113,34 @@ export const findUserById = async (userId: any) => {
     if (conn) conn.release();
   }
 };
+
+// 유저 권한에 따라 유저 정보 조회
+export const findUserByRole = async (userRole: any) => {
+  let conn;
+  const deleteStatus = 0;
+  const params: any[] = [deleteStatus, userRole];
+
+  try {
+    conn = await pool.getConnection();
+
+    let sql = `
+      SELECT up.user_id, up.user_email, up.user_name, up.phone_number, up.user_role, up.is_approved
+      FROM t_user_profile AS up
+      JOIN t_user AS u ON up.user_id = u.user_id
+      WHERE u.is_deleted = ?
+      AND up.user_role = ?
+      `;
+
+    conn = await pool.getConnection();
+    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
+      sql,
+      params,
+    );
+    return rows;
+  } catch (err) {
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+};
+

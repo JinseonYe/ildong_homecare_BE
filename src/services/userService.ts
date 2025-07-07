@@ -1,4 +1,5 @@
 import * as userModel from '../models/userModel';
+import * as buildingModel from '../models/buildingModel';
 import * as formatting from '../utils/formatting';
 import { UserSearchDto } from '../interfaces/userInterface';
 import * as generateQuery from '../utils/generateQuery';
@@ -98,4 +99,36 @@ export const getUserById = async (userDto: any) => {
       throw new Error('An unknown error occurred while fetching users');
     }
   }
+};
+
+// 건물 정보 조회
+export const getBuildingInfo = async (buildingId: number) => {
+  // 건물 정보 조회
+  const buildingInfo = await buildingModel.fetchBuildingById(buildingId);
+  if (!buildingInfo || buildingInfo.length === 0) {
+    throw new Error('해당 건물 정보를 찾을 수 없습니다.');
+  }
+
+  return buildingInfo[0];
+};
+
+export const getUserInfo = async (userId: number) => {
+    // 유저 정보 조회
+    const userInfo = await userModel.findUserById(userId);
+    if (!userInfo || userInfo.length === 0) {
+      throw new Error('해당 유저 정보를 찾을 수 없습니다.');
+    }
+  
+    return userInfo[0];
+}
+
+// 관리자 전체 조회
+export const getAdmins = async () => {
+  const adminUserRole = 0
+  // user_role이 admin인 유저 전체 조회
+  const admins = await userModel.findUserByRole(adminUserRole)
+    if (!admins) {
+    throw new Error('관리자 정보를 찾을 수 없습니다.');
+  }
+  return admins;
 };
