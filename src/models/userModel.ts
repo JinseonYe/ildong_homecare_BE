@@ -5,19 +5,24 @@ import { UserSearchDto } from '../interfaces/userInterface';
 // 유저 프로필 정보 업데이트 (Model)
 export const updateUserProfile = async (
   userId: any,
-  fields: string,
+  setQuery: string,
   values: any[],
 ) => {
   let conn;
+  const time = new Date();
+  values.push(time, userId);
 
   try {
-    const sql = `UPDATE t_user_profile SET ${fields} WHERE user_id = ?`;
+    const sql = `
+      UPDATE t_user_profile SET ${setQuery}, modified_at =? 
+      WHERE user_id = ?
+      `;
     conn = await pool.getConnection();
 
-    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(sql, [
-      ...values,
-      userId,
-    ]);
+    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
+      sql,
+      values,
+    );
 
     return rows;
   } catch (error) {
