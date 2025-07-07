@@ -3,6 +3,7 @@ import * as authService from '../services/authService';
 import * as authModel from '../models/authModel';
 import * as authMiddleware from '../middlewares/authMiddleware';
 import * as deviceService from '../services/deviceService';
+import * as userModel from '../models/userModel';
 
 // 회원가입 API
 export const register = async (req: Request, res: Response) => {
@@ -108,6 +109,9 @@ export const login = async (req: Request, res: Response) => {
       }
     }
 
+    const userInfo = await userModel.findUserById(userId);
+    const userRole = userInfo[0].user_role;
+
     const secretKey = process.env.SECRET_KEY ?? '';
     const R_secretKey = process.env.R_SECRET_KEY ?? '';
     const token = authMiddleware.createToken(
@@ -132,6 +136,7 @@ export const login = async (req: Request, res: Response) => {
       data: {
         userId,
         userName,
+        userRole,
       },
     });
   } catch (error) {
