@@ -33,7 +33,7 @@ export const fetchAllBuildingInfo = async () => {
 
   try {
     let sql = `
-      SELECT b.building_id, up.user_id, up.user_name, b.building_name, b.address, b.created_at
+      SELECT b.building_id, up.user_id, up.user_name, up.user_email, up.phone_number, b.building_name, b.address, b.created_at
       FROM t_building AS b
       JOIN t_user_profile AS up ON b.user_id = up.user_id
       WHERE is_deleted =?
