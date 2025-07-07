@@ -49,13 +49,6 @@ const chunkArray = (array: string[], size: number) => {
 // push 토큰 유효성 검증
 export const validatePushToken = async (token: string) => {
   try {
-    await getMessaging().send({
-      token,
-      notification: {
-        title: 'Token Validation',
-        body: 'This is a validation message',
-      },
-    });
     return true;
   } catch (error) {
     console.error('Token validation error:', error);
@@ -110,10 +103,20 @@ export const sendFCMNotification = async (
     const response = await getMessaging().sendEachForMulticast(message);
     successCount += response.successCount;
     failureCount += response.failureCount;
+
+    // 상세 로그 추가: 각 토큰별 성공/실패 및 에러 메시지
+    response.responses.forEach((resp, idx) => {
+      const token = chunk[idx];
+      if (resp.success) {
+        console.log(`[FCM SUCCESS] token: ${token}`);
+      } else {
+        console.error(`[FCM FAIL] token: ${token}, error:`, resp.error?.message || resp.error);
+      }
+    });
   }
 
-  console.log("successCount",successCount);
-  console.log("failureCount",failureCount);
+  console.log("[FCM SUMMARY] successCount:", successCount);
+  console.log("[FCM SUMMARY] failureCount:", failureCount);
   
 
   return { successCount, failureCount };

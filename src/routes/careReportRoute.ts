@@ -10,9 +10,9 @@ router.post(
   uploadMiddleware.uploadToLocal,
   careReportController.createCareReport,
 );
-router.get('/api/care-status', careReportController.getAllCareStatus);
 router.get('/api/care-reports', careReportController.getCareReports);
 router.get('/api/care-report', careReportController.getCareReportById);
 router.patch('/api/care-report/:careReportId', careReportController.updateCareReport);
+router.get('/api/care-status', careReportController.getAllCareStatus);
 
 export default router;

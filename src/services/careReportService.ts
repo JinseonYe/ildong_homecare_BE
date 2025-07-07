@@ -7,6 +7,9 @@ import crypto from 'crypto';
 import { FieldPacket, RowDataPacket } from 'mysql2';
 import * as buildingService from '../services/buildingService';
 import * as generateQuery from '../utils/generateQuery';
+import * as userModel from '../models/userModel'
+import * as deviceModel from '../models/deviceModel'
+import * as pushService from '../services/pushService'
 
 // 작업내역 등록하기
 export const createCareReport = async (careReportInfo: any, files: any) => {
@@ -326,13 +329,43 @@ export const checkIsBuildingOwner = async (
 export const updateCareStatusByReportId = async (careReportId: any) => {
   const careStatusId = 3; // 완료
   careReportModel.updateCareStatusByReportId(careStatusId, careReportId);
+
+  if(careStatusId == 3) {
+    // careStatusId가 3(승인)일 때 userRole 1(매니저), 0(관리자)에게 푸시
+    // userRole 1: 매니저, userRole 0: 관리자
+    const managerUserRole = 1
+    const adminUserRole = 0
+    const managers = await userModel.findUserByRole(managerUserRole);
+    const admins = await userModel.findUserByRole(adminUserRole);
+    const users = [...(managers || []), ...(admins || [])];
+    let allTokens = [];
+    for (const user of users) {
+      const tokens = await deviceModel.findPushTokenInfoByUserId(user.user_id);
+      if (tokens && tokens.length > 0) {
+        allTokens.push(...tokens.map((t: any) => t.push_token || t.pushToken));
+      }
+    }
+    allTokens = [...new Set(allTokens)].filter(Boolean);
+    if (allTokens.length > 0) {
+      await pushService.sendFCMNotification(
+        allTokens,
+        '작업내역 승인',
+        '작업내역이 승인되었습니다.'
+      );
+    }
+  }
 };
 
 // 작업 내역 수정
 export const updateCareReport = async (careReportId: any, updateData: any) => {
   try {
+    const careStatusId = updateData.care_status_id
     const { setQuery, values } = generateQuery.generateUpdateQuery(updateData);
     let result = await careReportModel.updateCareReport(careReportId, setQuery, values);
+
+    if(careStatusId == 3) {
+
+    }
 
     if (result.affectedRows > 0) {
       return true;
