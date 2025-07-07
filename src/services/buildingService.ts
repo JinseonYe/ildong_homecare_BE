@@ -24,7 +24,9 @@ export const getAllBuilding = async () => {
     } else {
       return false;
     }
-  } catch (error) {}
+  } catch (error) {
+    throw error;
+  }
 };
 
 // 건물 ID 별로 조회 하기

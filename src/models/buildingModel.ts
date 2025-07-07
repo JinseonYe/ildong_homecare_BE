@@ -28,19 +28,27 @@ export const insertBuildingInfo = async (buildingInfo: any) => {
 export const fetchAllBuildingInfo = async () => {
   let conn;
   const deleteStatus = 0;
+  const params = [deleteStatus];
 
   try {
     let sql = `
-      SELECT building_id, user_id, building_name, address
-      FROM t_building
-      WHERE is_deleted =?`;
+      SELECT b.building_id, up.user_id, up.user_name, b.building_name, b.address, b.created_at
+      FROM t_building AS b
+      JOIN t_user_profile AS up ON b.user_id = up.user_id
+      WHERE is_deleted =?
+      `;
 
     conn = await pool.getConnection();
 
     const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
       sql,
-      deleteStatus,
+      params,
     );
+
+    if (rows.length === 0) {
+      throw new Error('No buildings found');
+    }
+
     return rows;
   } catch (err) {
     throw err;
