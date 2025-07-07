@@ -6,7 +6,6 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { FieldPacket, RowDataPacket } from 'mysql2';
 import * as buildingService from '../services/buildingService';
-import { toCamelCase } from '../utils/formatting';
 
 // 작업내역 등록하기
 export const createCareReport = async (careReportInfo: any, files: any) => {
@@ -39,27 +38,8 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
     }
 
     // careCategoryIds를 배열로 변환 (문자열, 배열, 단일 값 모두 처리)
-    let processedCategoryIds: number[] = [];
-
-    if (careCategoryIds) {
-      if (typeof careCategoryIds === 'string') {
-        // "1,3" 형태의 문자열을 배열로 변환
-        if (careCategoryIds.includes(',')) {
-          processedCategoryIds = careCategoryIds
-            .split(',')
-            .map((id) => Number(id.trim()));
-        } else {
-          // 단일 값인 경우
-          processedCategoryIds = [Number(careCategoryIds)];
-        }
-      } else if (Array.isArray(careCategoryIds)) {
-        // 이미 배열인 경우
-        processedCategoryIds = careCategoryIds.map((id) => Number(id));
-      } else {
-        // 단일 숫자인 경우
-        processedCategoryIds = [Number(careCategoryIds)];
-      }
-    }
+    const processedCategoryIds: any[] = ([] =
+      normalizeToNumberArray(careCategoryIds));
 
     // 카테고리 ID 유효성 체크 후 삽입
     if (processedCategoryIds?.length > 0) {
@@ -98,6 +78,43 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
   } finally {
     if (conn) conn.release();
   }
+};
+
+/**
+ * 문자열, 숫자, 배열 등 다양한 형태의 입력을 number[]로 일관되게 파싱합니다.
+ * - "1,2,3" → [1, 2, 3]
+ * - "[1,2,3]" → [1, 2, 3]
+ * - 1 → [1]
+ * - [1, 2] → [1, 2]
+ * - undefined / null / "" → []
+ */
+export const normalizeToNumberArray = (
+  input: string | number | Array<string | number> | null | undefined,
+): number[] => {
+  if (!input || input === '[]') return [];
+
+  if (typeof input === 'string') {
+    try {
+      // JSON 배열 문자열인 경우 (예: "[1,2,3]")
+      const parsed = JSON.parse(input);
+      if (Array.isArray(parsed)) {
+        return parsed.map((v) => Number(v)).filter((v) => !isNaN(v));
+      }
+    } catch {
+      // JSON.parse 실패 시, "1,2,3" 형태로 처리
+      return input
+        .split(',')
+        .map((id) => Number(id.trim()))
+        .filter((v) => !isNaN(v));
+    }
+  }
+
+  if (Array.isArray(input)) {
+    return input.map((v) => Number(v)).filter((v) => !isNaN(v));
+  }
+
+  const num = Number(input);
+  return isNaN(num) ? [] : [num];
 };
 
 // 작업 상태 조회하기
