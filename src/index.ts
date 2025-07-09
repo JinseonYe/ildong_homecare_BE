@@ -22,6 +22,7 @@ if (!fs.existsSync(uploadDir)) {
   console.log(`📁 Created directory: ${uploadDir}`);
 }
 
+const BACKEND_HOST = process.env.BACKEND_HOST;
 const BACKEND_PORT = parseInt(process.env.BACKEND_PORT || '51111', 10);
 const SERVER_TYPE = process.env.SERVER_TYPE; // 서버 타입 (http or https)
 
@@ -38,11 +39,9 @@ if (SERVER_TYPE === 'http') {
   try {
     // SSL 인증서 옵션 설정
     const options = {
-      key: fs.readFileSync(
-        '/etc/letsencrypt/live/onehc.logicinfuse.com/privkey.pem',
-      ),
+      key: fs.readFileSync(`/etc/letsencrypt/live/${BACKEND_HOST}/privkey.pem`),
       cert: fs.readFileSync(
-        '/etc/letsencrypt/live/onehc.logicinfuse.com/fullchain.pem',
+        `/etc/letsencrypt/live/${BACKEND_HOST}/fullchain.pem`,
       ),
     };
 
