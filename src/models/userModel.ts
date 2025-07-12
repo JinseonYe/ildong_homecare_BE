@@ -4,20 +4,19 @@ import { UserSearchDto } from '../interfaces/userInterface';
 
 // 유저 프로필 정보 업데이트 (Model)
 export const updateUserProfile = async (
+  conn: any,
   userId: any,
   setQuery: string,
   values: any[],
+  updatedAt: any,
 ) => {
-  let conn;
-  const time = new Date();
-  values.push(time, userId);
+  values.push(updatedAt, userId);
 
   try {
     const sql = `
       UPDATE t_user_profile SET ${setQuery}, modified_at =? 
       WHERE user_id = ?
       `;
-    conn = await pool.getConnection();
 
     const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
       sql,
@@ -87,18 +86,21 @@ export const findUsers = async (
 export const findUserById = async (userId: any) => {
   let conn;
   const deleteStatus = 0;
-  const params: any[] = [deleteStatus, userId];
+  const params: any[] = [deleteStatus, userId, deleteStatus];
 
   try {
     conn = await pool.getConnection();
 
     let sql = `
         SELECT u.user_id, prof.user_email, prof.user_name, prof.phone_number, 
-        prof.user_role, prof.is_approved, prof.activate_alarm
+        prof.user_role, prof.is_approved, prof.activate_alarm, fu.file_name, fu.file_url
         FROM t_user_profile AS prof
         JOIN t_user AS u ON prof.user_id = u.user_id
+        LEFT JOIN t_file_upload AS fu ON prof.user_id = fu.target_id
+          AND fu.target_type = 'profile'
         WHERE u.is_deleted = ?
         AND u.user_id = ?
+        AND fu.is_deleted = ?
         `;
 
     conn = await pool.getConnection();
@@ -143,4 +145,3 @@ export const findUserByRole = async (userRole: any) => {
     if (conn) conn.release();
   }
 };
-

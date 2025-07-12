@@ -1,11 +1,19 @@
+import { pool } from '../config/db';
 import * as userModel from '../models/userModel';
 import * as buildingModel from '../models/buildingModel';
 import * as formatting from '../utils/formatting';
 import { UserSearchDto } from '../interfaces/userInterface';
 import * as generateQuery from '../utils/generateQuery';
+import * as fileService from '../services/fileService';
 
 // 유저 프로필 업데이트
-export const updateUserProfile = async (userId: any, updateData: any) => {
+export const updateUserProfile = async (
+  userId: any,
+  updateData: any,
+  files: any,
+) => {
+  let conn;
+
   if (!userId) {
     throw new Error('User ID is required');
   }
@@ -15,12 +23,52 @@ export const updateUserProfile = async (userId: any, updateData: any) => {
   }
 
   try {
+    const updatedAt = new Date();
+    conn = await pool.getConnection();
+    await conn.beginTransaction(); // 트랜잭션 시작
+
     const { setQuery, values } = generateQuery.generateUpdateQuery(updateData);
 
-    const result = await userModel.updateUserProfile(userId, setQuery, values);
+    const result: any = await userModel.updateUserProfile(
+      conn,
+      userId,
+      setQuery,
+      values,
+      updatedAt,
+    );
+
+    if (result.affectedRows === 0) {
+      throw new Error('유저 정보 수정 실패');
+    }
+
+    const targetType = 'profile';
+    const fileDeletedResult = await fileService.softDeleteDocumentInfo(
+      conn,
+      userId,
+      targetType,
+    );
+
+    if (fileDeletedResult.affectedRows === 0) {
+      throw new Error('파일 정보 삭제 실패');
+    }
+
+    // 파일 정보 수정
+    await fileService.insertFileInfos(
+      conn,
+      files,
+      userId,
+      targetType,
+      updatedAt,
+    );
+
+    await conn.commit(); // 성공 시 커밋
+
     return result;
   } catch (error) {
+    if (conn) await conn.rollback(); // 에러 발생 시 롤백
     throw error;
+  } finally {
+    if (conn) conn.release();
   }
 };
 
@@ -79,13 +127,11 @@ export const getUsers = async (userDto: UserSearchDto) => {
 };
 
 // id별로 유저 조회
-export const getUserById = async (userDto: any) => {
+export const getUserById = async (userId: any) => {
   // DTO 유효성 검사
-  if (!userDto) {
+  if (!userId) {
     throw new Error('No search criteria provided');
   }
-
-  const { userId } = userDto;
 
   try {
     const result = await userModel.findUserById(userId);
@@ -113,21 +159,21 @@ export const getBuildingInfo = async (buildingId: number) => {
 };
 
 export const getUserInfo = async (userId: number) => {
-    // 유저 정보 조회
-    const userInfo = await userModel.findUserById(userId);
-    if (!userInfo || userInfo.length === 0) {
-      throw new Error('해당 유저 정보를 찾을 수 없습니다.');
-    }
-  
-    return userInfo[0];
-}
+  // 유저 정보 조회
+  const userInfo = await userModel.findUserById(userId);
+  if (!userInfo || userInfo.length === 0) {
+    throw new Error('해당 유저 정보를 찾을 수 없습니다.');
+  }
+
+  return userInfo[0];
+};
 
 // 관리자 전체 조회
 export const getAdmins = async () => {
-  const adminUserRole = 0
+  const adminUserRole = 0;
   // user_role이 admin인 유저 전체 조회
-  const admins = await userModel.findUserByRole(adminUserRole)
-    if (!admins) {
+  const admins = await userModel.findUserByRole(adminUserRole);
+  if (!admins) {
     throw new Error('관리자 정보를 찾을 수 없습니다.');
   }
   return admins;

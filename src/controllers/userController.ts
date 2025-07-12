@@ -5,8 +5,16 @@ import * as formatting from '../utils/formatting';
 
 // 유저 프로필 업데이트
 export const updateUserProfile = async (req: Request, res: Response) => {
+  const { files, fileNameUrl, ...updateData } = req.body;
   const { userId } = req.params;
-  const updateData = req.body;
+  const originalFiles = req.files;
+  let filePaths: string[] = [];
+
+  if (Array.isArray(originalFiles)) {
+    filePaths = originalFiles.map((originalFile) => originalFile.path);
+  } else {
+    console.log('파일이 업로드되지 않았습니다.');
+  }
 
   try {
     // userId 유효성 검사
@@ -24,12 +32,19 @@ export const updateUserProfile = async (req: Request, res: Response) => {
         .json({ success: false, message: '수정할 데이터가 없습니다.' });
     }
 
-    const result = await userService.updateUserProfile(userId, updateData);
+    const result = await userService.updateUserProfile(
+      userId,
+      updateData,
+      filePaths,
+    );
+
+    const fetchedData = await userService.getUserById(userId);
 
     if (result) {
       return res.status(200).send({
         success: true,
         message: '업데이트 성공',
+        data: fetchedData,
       });
     }
   } catch (error) {
@@ -97,17 +112,11 @@ export const getUsers = async (req: Request, res: Response) => {
 export const getUserById = async (req: Request, res: Response) => {
   try {
     // 쿼리 파라미터 추출 및 기본값 설정
-    const userId = req.query.userId;
-
-    // DTO 생성
-    const userSearchDto = {
-      userId,
-    };
-
+    let userId = req.query.userId;
     // 카멜케이스로 변환
-    const convertedDto: any = formatting.toCamelCase(userSearchDto);
+    userId = formatting.toCamelCase(userId);
 
-    const result = await userService.getUserById(convertedDto);
+    const result = await userService.getUserById(userId);
 
     if (result) {
       return res.status(200).send({
