@@ -103,8 +103,16 @@ export const findCareReports = async (
         cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, b.building_name,
         cr.title, cr.care_content, cr.care_comment, cr.amount,
         GROUP_CONCAT(crc.care_category_id ORDER BY crc.care_category_id SEPARATOR ', ') AS care_categories,
-        (SELECT file_name FROM t_file_upload WHERE care_report_id = cr.care_report_id LIMIT 1) AS file_name,
-        (SELECT file_url FROM t_file_upload WHERE care_report_id = cr.care_report_id LIMIT 1) AS file_url,
+        (SELECT f.file_name FROM t_file_upload AS f 
+        WHERE f.target_id = cr.care_report_id 
+          AND f.target_type = 'carereport' 
+        ORDER BY f.created_at 
+        LIMIT 1) AS file_name,
+        (SELECT f.file_url FROM t_file_upload AS f 
+        WHERE f.target_id = cr.care_report_id 
+          AND f.target_type = 'carereport' 
+        ORDER BY f.created_at 
+        LIMIT 1) AS file_url,
         cr.created_at
       FROM t_care_report AS cr
       LEFT JOIN t_care_report_category AS crc 
@@ -186,10 +194,13 @@ export const updateCareStatusByReportId = async (
 
 // Id별로 작업 내역 조회하기
 // TODO: 우선 모든 카테고리 id를 한 컬럼에 넣어서 문자로 묶어서 보내는데 요구사항 수정에 따라 변경 가능함
-export const findCareReportById = async (careReportId: any) => {
+export const findCareReportById = async (
+  careReportId: any,
+  targetType: any,
+) => {
   let conn;
   const deleteStatus = 0;
-  const params: any[] = [deleteStatus, careReportId];
+  const params: any[] = [targetType, deleteStatus, careReportId];
 
   try {
     let sql = `
@@ -199,7 +210,8 @@ export const findCareReportById = async (careReportId: any) => {
         GROUP_CONCAT(DISTINCT crc.care_category_id ORDER BY crc.care_category_id) AS care_category_ids
       FROM t_care_report cr
       LEFT JOIN t_file_upload fu
-        ON cr.care_report_id = fu.care_report_id
+        ON cr.care_report_id = fu.target_id
+        AND fu.target_type = ? 
       LEFT JOIN t_care_report_category crc
         ON cr.care_report_id = crc.care_report_id
       JOIN t_building b
@@ -222,32 +234,6 @@ export const findCareReportById = async (careReportId: any) => {
   } finally {
     if (conn) conn.release();
   }
-};
-
-// DB에 파일 정보 삽입
-export const insertDocumentInfo = async (
-  conn: any,
-  userId: number,
-  fileInfo: any,
-  careReportId: number,
-  createdAt: Date,
-) => {
-  const params = [
-    userId,
-    careReportId,
-    fileInfo.fileHash,
-    fileInfo.fileName,
-    fileInfo.fileExtension,
-    fileInfo.filePath,
-    fileInfo.fileFullPath,
-    fileInfo.fileUrl,
-    createdAt,
-  ];
-  const sql = `INSERT INTO t_file_upload (user_id, care_report_id, file_hash, file_name, file_extension, file_path, 
-    file_full_path, file_url, created_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-  await conn.query(sql, params);
 };
 
 // 작업 내역 수정

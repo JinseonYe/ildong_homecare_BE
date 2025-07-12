@@ -1,22 +1,19 @@
 import * as careReportModel from '../models/careReportModel';
 import * as formatting from '../utils/formatting';
 import { pool } from '../config/db';
-import path from 'path';
-import fs from 'fs';
-import crypto from 'crypto';
 import { FieldPacket, RowDataPacket } from 'mysql2';
 import * as buildingService from '../services/buildingService';
 import * as generateQuery from '../utils/generateQuery';
 import * as userModel from '../models/userModel';
 import * as deviceModel from '../models/deviceModel';
 import * as pushService from '../services/pushService';
+import * as fileService from '../services/fileService';
 
 // 작업내역 등록하기
 export const createCareReport = async (careReportInfo: any, files: any) => {
   let conn;
   try {
     const createdAt = new Date();
-    const userId = Number(careReportInfo.userId);
     conn = await pool.getConnection();
     await conn.beginTransaction(); // 트랜잭션 시작
 
@@ -28,18 +25,16 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
 
     const careReportId = result.insertId; // 생성된 `care_report_id`
     const careCategoryIds = careReportInfo.careCategoryIds;
-    const fileInfos = await extractFileInfo(files);
+    const targetType = 'carereport';
 
     // 파일 정보 삽입
-    for (const fileInfo of fileInfos) {
-      await careReportModel.insertDocumentInfo(
-        conn,
-        userId,
-        fileInfo,
-        careReportId,
-        createdAt,
-      ); // 파일 정보
-    }
+    await fileService.insertFileInfos(
+      conn,
+      files,
+      careReportId,
+      targetType,
+      createdAt,
+    );
 
     // careCategoryIds를 배열로 변환 (문자열, 배열, 단일 값 모두 처리)
     const processedCategoryIds: any[] = ([] =
@@ -134,52 +129,6 @@ export const getAllCareStatus = async () => {
   } catch (error) {}
 };
 
-// 파일에서 파일 정보 추출
-export const extractFileInfo = async (files: string[]) => {
-  const fileInfoPromises = files.map(async (file) => {
-    const fileName = path.basename(file);
-    const fileExtension = path.extname(file);
-    const filePath = path.dirname(file);
-    const fileFullPath = path.format(path.parse(file));
-    const serverUrl = `${process.env.SERVER_TYPE}://${process.env.BACKEND_HOST}:${process.env.BACKEND_PORT}`;
-    const fileUrl = `${serverUrl}/uploads/${fileName}`;
-    const fileHash = await hashFile(fileFullPath);
-
-    return {
-      fileName, // 파일명 (예: "이미지.jpg")
-      fileExtension, // 파일 확장자 (예: ".jpg")
-      filePath, // 파일이 저장된 디렉터리 경로
-      fileFullPath, // 전체 파일 경로
-      fileUrl, // 파일 URL (완전한 URL)
-      fileHash,
-    };
-  });
-  const fileInfos = await Promise.all(fileInfoPromises);
-
-  return fileInfos;
-};
-
-// 파일 내용을 해시
-export const hashFile = (filePath: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const fileStream = fs.createReadStream(filePath);
-    const hash = crypto.createHash('sha1');
-
-    fileStream.on('data', (chunk) => {
-      hash.update(chunk);
-    });
-
-    fileStream.on('end', () => {
-      const fileHash = hash.digest('hex');
-      resolve(fileHash);
-    });
-
-    fileStream.on('error', (err) => {
-      reject(`파일을 읽는 도중 오류 발생: ${err.message}`);
-    });
-  });
-};
-
 // 작업 내역 조회하기
 export const getCareReports = async (careReportSearchDto: any) => {
   // DTO 유효성 검사
@@ -230,9 +179,13 @@ export const getCareReportById = async (careReportId: any) => {
   if (!careReportId) {
     throw new Error('No search criteria provided');
   }
+  const targetType = 'carereport';
 
   try {
-    const fetchedData = await careReportModel.findCareReportById(careReportId);
+    const fetchedData = await careReportModel.findCareReportById(
+      careReportId,
+      targetType,
+    );
     let result = await formmatFetchedAllCareReport(fetchedData);
 
     if (!result || result.length === 0) {
