@@ -54,8 +54,17 @@ export const getAllBuilding = async (req: Request, res: Response) => {
 
 // 건물 정보 업데이트하기
 export const updateBuilding = async (req: Request, res: Response) => {
-  const updateData = req.body;
+  const { files, fileNameUrl, ...updateData } = req.body;
   const buildingId = req.params.buildingId;
+  const originalFiles = req.files;
+  let filePaths: string[] = [];
+  let result;
+
+  if (Array.isArray(originalFiles)) {
+    filePaths = originalFiles.map((originalFile) => originalFile.path);
+  } else {
+    console.log('파일이 업로드되지 않았습니다.');
+  }
 
   try {
     // 건믈 ID 가 포함되었는지 확인
@@ -70,8 +79,8 @@ export const updateBuilding = async (req: Request, res: Response) => {
     const isUpdate = await buildingService.updateBuilding(
       buildingId,
       updateData,
+      filePaths,
     );
-    let result;
 
     // 업데이트 성공 시 id별로 건물 정보 조회 데이터 반환
     // TODO: 전체 건물 정보 조회할지 id별로 건물 조회할지 상의 후 수정

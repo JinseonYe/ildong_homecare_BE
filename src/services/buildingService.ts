@@ -68,21 +68,58 @@ export const fetchBuildingById = async (buildingId: any) => {
 };
 
 // 건물 정보 업데이트하기
-export const updateBuilding = async (buildingId: any, updateData: any) => {
+export const updateBuilding = async (
+  buildingId: any,
+  updateData: any,
+  files: any,
+) => {
+  let conn;
+
   try {
+    const updatedAt = new Date();
+    conn = await pool.getConnection();
+    await conn.beginTransaction(); // 트랜잭션 시작
     const { setQuery, values } = generateQuery.generateUpdateQuery(updateData);
     let result = await buildingModel.updateBuilding(
+      conn,
       buildingId,
       setQuery,
       values,
+      updatedAt,
     );
 
-    if (result.affectedRows > 0) {
-      return true;
-    } else {
-      return false; // 업데이트된 행이 없음
+    if (result.affectedRows === 0) {
+      throw new Error('건물 정보 수정 실패');
     }
-  } catch (error) {}
+
+    const isDeleted = await fileService.softDeleteDocumentInfo(
+      conn,
+      buildingId,
+    );
+
+    if (isDeleted.affectedRows === 0) {
+      throw new Error('파일 정보 삭제 실패');
+    }
+
+    const targetType = 'building';
+
+    // 파일 정보 수정
+    await fileService.insertFileInfos(
+      conn,
+      files,
+      buildingId,
+      targetType,
+      updatedAt,
+    );
+
+    await conn.commit(); // 성공 시 커밋
+    return true;
+  } catch (error) {
+    if (conn) await conn.rollback(); // 에러 발생 시 롤백
+    throw error;
+  } finally {
+    if (conn) conn.release();
+  }
 };
 
 // 건물 삭제하기

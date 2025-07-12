@@ -6,20 +6,45 @@ export const insertDocumentInfo = async (
   fileInfo: any,
   createdAt: Date,
 ) => {
-  const params = [
-    targetId,
-    targetType,
-    fileInfo.fileHash,
-    fileInfo.fileName,
-    fileInfo.fileExtension,
-    fileInfo.filePath,
-    fileInfo.fileFullPath,
-    fileInfo.fileUrl,
-    createdAt,
-  ];
-  const sql = `INSERT INTO t_file_upload (target_id, target_type, file_hash, file_name, file_extension, file_path, 
+  try {
+    const params = [
+      targetId,
+      targetType,
+      fileInfo.fileHash,
+      fileInfo.fileName,
+      fileInfo.fileExtension,
+      fileInfo.filePath,
+      fileInfo.fileFullPath,
+      fileInfo.fileUrl,
+      createdAt,
+    ];
+    const sql = `INSERT INTO t_file_upload (target_id, target_type, file_hash, file_name, file_extension, file_path, 
       file_full_path, file_url, created_at) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
-  await conn.query(sql, params);
+
+    const [result]: any = await conn.query(sql, params);
+    return result;
+  } catch (error) {
+    throw error;
+  } finally {
+    if (conn) conn.release();
+  }
+};
+
+// DB에 파일 정보 삭제
+export const softDeleteDocumentInfo = async (conn: any, targetId: number) => {
+  const deleteStatus = 1;
+  try {
+    const params = [deleteStatus, targetId];
+    const sql = `UPDATE t_file_upload SET is_deleted = ? WHERE target_id = ?
+        `;
+
+    const [result]: any = await conn.query(sql, params);
+    return result;
+  } catch (error) {
+    throw error;
+  } finally {
+    if (conn) conn.release();
+  }
 };

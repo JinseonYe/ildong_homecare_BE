@@ -11,7 +11,12 @@ router.post(
   buildingController.createBuilding,
 );
 router.get('/api/building', buildingController.getAllBuilding);
-router.patch('/api/building/:buildingId', buildingController.updateBuilding);
+router.patch(
+  '/api/building/:buildingId',
+  uploadMiddleware.uploadToLocalMiddleware,
+  uploadMiddleware.uploadToLocal,
+  buildingController.updateBuilding,
+);
 router.delete('/api/building/:buildingId', buildingController.deleteBuilding);
 
 export default router;

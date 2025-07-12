@@ -65,18 +65,24 @@ export const fetchBuildingById = async (buildingId: any) => {
   const deleteStatus = 0;
 
   try {
+    const params = [deleteStatus, buildingId, deleteStatus];
     let sql = `
-      SELECT building_id, user_id, building_name, address
-      FROM t_building
-      WHERE is_deleted =?
-      AND building_id =?`;
+     SELECT b.building_id, b.user_id, b.building_name, b.address, fu.file_name, fu.file_url
+      FROM t_building AS b
+      LEFT JOIN t_file_upload fu
+        ON b.building_id = fu.target_id
+        AND fu.target_type = 'building'
+      WHERE b.is_deleted =?
+      AND b.building_id =?
+      AND fu.is_deleted =?
+      `;
 
     conn = await pool.getConnection();
 
-    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(sql, [
-      deleteStatus,
-      buildingId,
-    ]);
+    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
+      sql,
+      params,
+    );
     return rows;
   } catch (err) {
     throw err;
@@ -87,12 +93,12 @@ export const fetchBuildingById = async (buildingId: any) => {
 
 // 건물 업데이트
 export const updateBuilding = async (
+  conn: any,
   buildingId: any,
   setQuery: string,
   values: any[],
+  updatedAt: any,
 ) => {
-  let conn;
-  const time = new Date();
   const deleteStatus = 0;
 
   try {
@@ -101,9 +107,8 @@ export const updateBuilding = async (
       WHERE is_deleted =? 
       AND building_id = ?`;
 
-    values.push(time, deleteStatus, buildingId);
+    values.push(updatedAt, deleteStatus, buildingId);
 
-    conn = await pool.getConnection();
     const [result]: any = await conn.query(sql, values);
 
     return result;
