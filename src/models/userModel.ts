@@ -86,7 +86,7 @@ export const findUsers = async (
 export const findUserById = async (userId: any) => {
   let conn;
   const deleteStatus = 0;
-  const params: any[] = [deleteStatus, userId, deleteStatus];
+  const params: any[] = [deleteStatus, deleteStatus, userId];
 
   try {
     conn = await pool.getConnection();
@@ -98,9 +98,9 @@ export const findUserById = async (userId: any) => {
         JOIN t_user AS u ON prof.user_id = u.user_id
         LEFT JOIN t_file_upload AS fu ON prof.user_id = fu.target_id
           AND fu.target_type = 'profile'
+          AND fu.is_deleted = ?
         WHERE u.is_deleted = ?
         AND u.user_id = ?
-        AND fu.is_deleted = ?
         `;
 
     conn = await pool.getConnection();

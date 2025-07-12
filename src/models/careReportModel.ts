@@ -214,13 +214,13 @@ export const findCareReportById = async (
       LEFT JOIN t_file_upload fu
         ON cr.care_report_id = fu.target_id
         AND fu.target_type = ? 
+        AND fu.is_deleted = ?
       LEFT JOIN t_care_report_category crc
         ON cr.care_report_id = crc.care_report_id
       JOIN t_building b
         ON cr.building_id = b.building_id
       WHERE cr.is_deleted = ?
         AND cr.care_report_id = ?
-        AND fu.is_deleted = ?
       GROUP BY cr.care_report_id, fu.file_name, fu.file_url
       ORDER BY cr.care_report_id;
      `;

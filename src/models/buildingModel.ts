@@ -72,9 +72,9 @@ export const fetchBuildingById = async (buildingId: any) => {
       LEFT JOIN t_file_upload fu
         ON b.building_id = fu.target_id
         AND fu.target_type = 'building'
+        AND fu.is_deleted =?
       WHERE b.is_deleted =?
       AND b.building_id =?
-      AND fu.is_deleted =?
       `;
 
     conn = await pool.getConnection();
