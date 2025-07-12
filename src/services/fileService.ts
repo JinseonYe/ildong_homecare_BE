@@ -26,8 +26,16 @@ export const insertFileInfos = async (
 };
 
 // 파일 정보 삭제
-export const softDeleteDocumentInfo = async (conn: any, targetId: any) => {
-  const isDeleted = await fileModel.softDeleteDocumentInfo(conn, targetId); // 파일 정보
+export const softDeleteDocumentInfo = async (
+  conn: any,
+  targetId: any,
+  targetType: string,
+) => {
+  const isDeleted = await fileModel.softDeleteDocumentInfo(
+    conn,
+    targetId,
+    targetType,
+  ); // 파일 정보
 
   return isDeleted;
 };

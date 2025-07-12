@@ -285,14 +285,49 @@ export const updateCareStatusByReportId = async (careReportId: any) => {
 };
 
 // 작업 내역 수정
-export const updateCareReport = async (careReportId: any, updateData: any) => {
+export const updateCareReport = async (
+  careReportId: any,
+  updateData: any,
+  files: any,
+) => {
+  let conn;
   try {
+    const updatedAt = new Date();
+    conn = await pool.getConnection();
+    await conn.beginTransaction(); // 트랜잭션 시작
+
     const careStatusId = updateData.careStatusId;
     const { setQuery, values } = generateQuery.generateUpdateQuery(updateData);
     let result = await careReportModel.updateCareReport(
+      conn,
       careReportId,
       setQuery,
       values,
+      updatedAt,
+    );
+
+    if (result.affectedRows === 0) {
+      throw new Error('작업 내역 정보 수정 실패');
+    }
+
+    const targetType = 'carereport';
+    const fileDeletedResult = await fileService.softDeleteDocumentInfo(
+      conn,
+      careReportId,
+      targetType,
+    );
+
+    if (fileDeletedResult.affectedRows === 0) {
+      throw new Error('파일 정보 삭제 실패');
+    }
+
+    // 파일 정보 수정
+    await fileService.insertFileInfos(
+      conn,
+      files,
+      careReportId,
+      targetType,
+      updatedAt,
     );
 
     if (careStatusId == 3) {

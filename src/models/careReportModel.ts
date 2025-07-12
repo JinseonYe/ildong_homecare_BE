@@ -95,7 +95,7 @@ export const findCareReports = async (
 ) => {
   let conn;
   const deleteStatus = 0;
-  const params: any[] = [deleteStatus]; // 기본 파라미터
+  const params: any[] = [deleteStatus, deleteStatus, deleteStatus]; // 기본 파라미터
 
   try {
     let sql = `
@@ -106,11 +106,13 @@ export const findCareReports = async (
         (SELECT f.file_name FROM t_file_upload AS f 
         WHERE f.target_id = cr.care_report_id 
           AND f.target_type = 'carereport' 
+          AND f.is_deleted = ?
         ORDER BY f.created_at 
         LIMIT 1) AS file_name,
         (SELECT f.file_url FROM t_file_upload AS f 
         WHERE f.target_id = cr.care_report_id 
           AND f.target_type = 'carereport' 
+          AND f.is_deleted = ?
         ORDER BY f.created_at 
         LIMIT 1) AS file_url,
         cr.created_at
@@ -200,7 +202,7 @@ export const findCareReportById = async (
 ) => {
   let conn;
   const deleteStatus = 0;
-  const params: any[] = [targetType, deleteStatus, careReportId];
+  const params: any[] = [targetType, deleteStatus, careReportId, deleteStatus];
 
   try {
     let sql = `
@@ -218,6 +220,7 @@ export const findCareReportById = async (
         ON cr.building_id = b.building_id
       WHERE cr.is_deleted = ?
         AND cr.care_report_id = ?
+        AND fu.is_deleted = ?
       GROUP BY cr.care_report_id, fu.file_name, fu.file_url
       ORDER BY cr.care_report_id;
      `;
@@ -238,14 +241,14 @@ export const findCareReportById = async (
 
 // 작업 내역 수정
 export const updateCareReport = async (
+  conn: any,
   careReportId: any,
   setQuery: any,
   values: any,
+  updatedAt: any,
 ) => {
-  let conn;
-  const time = new Date();
   const deleteStatus = 0;
-  const params = [...values, time, deleteStatus, careReportId];
+  const params = [...values, updatedAt, deleteStatus, careReportId];
 
   try {
     const sql = `
@@ -254,7 +257,6 @@ export const updateCareReport = async (
       AND care_report_id = ?
     `;
 
-    conn = await pool.getConnection();
     const [result]: any = await conn.query(sql, params);
 
     return result;

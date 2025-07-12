@@ -33,11 +33,16 @@ export const insertDocumentInfo = async (
 };
 
 // DB에 파일 정보 삭제
-export const softDeleteDocumentInfo = async (conn: any, targetId: number) => {
+export const softDeleteDocumentInfo = async (
+  conn: any,
+  targetId: number,
+  targetType: string,
+) => {
   const deleteStatus = 1;
   try {
-    const params = [deleteStatus, targetId];
-    const sql = `UPDATE t_file_upload SET is_deleted = ? WHERE target_id = ?
+    const params = [deleteStatus, targetId, targetType];
+    const sql = `
+        UPDATE t_file_upload SET is_deleted = ? WHERE target_id = ? AND target_type =?
         `;
 
     const [result]: any = await conn.query(sql, params);

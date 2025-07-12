@@ -79,6 +79,7 @@ export const updateBuilding = async (
     const updatedAt = new Date();
     conn = await pool.getConnection();
     await conn.beginTransaction(); // 트랜잭션 시작
+
     const { setQuery, values } = generateQuery.generateUpdateQuery(updateData);
     let result = await buildingModel.updateBuilding(
       conn,
@@ -92,16 +93,16 @@ export const updateBuilding = async (
       throw new Error('건물 정보 수정 실패');
     }
 
-    const isDeleted = await fileService.softDeleteDocumentInfo(
+    const targetType = 'building';
+    const fileDeletedResult = await fileService.softDeleteDocumentInfo(
       conn,
       buildingId,
+      targetType,
     );
 
-    if (isDeleted.affectedRows === 0) {
+    if (fileDeletedResult.affectedRows === 0) {
       throw new Error('파일 정보 삭제 실패');
     }
-
-    const targetType = 'building';
 
     // 파일 정보 수정
     await fileService.insertFileInfos(
