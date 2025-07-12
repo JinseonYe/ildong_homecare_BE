@@ -7,8 +7,8 @@ export const insertCareReport = async (conn: any, careReportInfo: any) => {
 
   try {
     let sql = `
-    INSERT INTO t_care_report (user_id, building_id, care_status_id, title, care_content, created_at)
-        VALUES (?, ?, ?, ?, ? ,?)`;
+    INSERT INTO t_care_report (user_id, building_id, care_status_id, title, care_content, amount, created_at)
+        VALUES (?, ?, ?, ?, ? ,?, ?)`;
 
     const values = [
       careReportInfo.userId,
@@ -16,6 +16,7 @@ export const insertCareReport = async (conn: any, careReportInfo: any) => {
       careReportInfo.careStatusId,
       careReportInfo.title,
       careReportInfo.careContent,
+      careReportInfo.amount,
       time,
     ];
 
@@ -100,7 +101,7 @@ export const findCareReports = async (
     let sql = `
       SELECT 
         cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, b.building_name,
-        cr.title, cr.care_content, cr.care_comment, 
+        cr.title, cr.care_content, cr.care_comment, cr.amount,
         GROUP_CONCAT(crc.care_category_id ORDER BY crc.care_category_id SEPARATOR ', ') AS care_categories,
         (SELECT file_name FROM t_file_upload WHERE care_report_id = cr.care_report_id LIMIT 1) AS file_name,
         (SELECT file_url FROM t_file_upload WHERE care_report_id = cr.care_report_id LIMIT 1) AS file_url,
@@ -194,7 +195,7 @@ export const findCareReportById = async (careReportId: any) => {
     let sql = `
       SELECT 
         cr.care_report_id, cr.user_id, cr.building_id, b.building_name, cr.care_status_id,
-        cr.title, cr.care_content, cr.care_comment, fu.file_name, fu.file_url,
+        cr.title, cr.care_content, cr.care_comment, cr.amount, fu.file_name, fu.file_url,
         GROUP_CONCAT(DISTINCT crc.care_category_id ORDER BY crc.care_category_id) AS care_category_ids
       FROM t_care_report cr
       LEFT JOIN t_file_upload fu
@@ -250,11 +251,15 @@ export const insertDocumentInfo = async (
 };
 
 // 작업 내역 수정
-export const updateCareReport = async (careReportId: any, setQuery: any, values: any) => {
+export const updateCareReport = async (
+  careReportId: any,
+  setQuery: any,
+  values: any,
+) => {
   let conn;
   const time = new Date();
   const deleteStatus = 0;
-  const params = [...values, time, deleteStatus, careReportId]
+  const params = [...values, time, deleteStatus, careReportId];
 
   try {
     const sql = `
@@ -262,7 +267,7 @@ export const updateCareReport = async (careReportId: any, setQuery: any, values:
       WHERE is_deleted = ?
       AND care_report_id = ?
     `;
-    
+
     conn = await pool.getConnection();
     const [result]: any = await conn.query(sql, params);
 
