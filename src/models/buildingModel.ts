@@ -65,7 +65,7 @@ export const fetchBuildingById = async (buildingId: any) => {
   const deleteStatus = 0;
 
   try {
-    const params = [deleteStatus, buildingId, deleteStatus];
+    const params = [deleteStatus, deleteStatus, buildingId];
     let sql = `
      SELECT b.building_id, b.user_id, b.building_name, b.address, fu.file_name, fu.file_url
       FROM t_building AS b

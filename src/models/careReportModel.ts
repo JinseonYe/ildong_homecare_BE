@@ -202,7 +202,7 @@ export const findCareReportById = async (
 ) => {
   let conn;
   const deleteStatus = 0;
-  const params: any[] = [targetType, deleteStatus, careReportId, deleteStatus];
+  const params: any[] = [targetType, deleteStatus, deleteStatus, careReportId];
 
   try {
     let sql = `
