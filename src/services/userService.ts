@@ -48,10 +48,6 @@ export const updateUserProfile = async (
       targetType,
     );
 
-    if (fileDeletedResult.affectedRows === 0) {
-      throw new Error('파일 정보 삭제 실패');
-    }
-
     // 파일 정보 수정
     await fileService.insertFileInfos(
       conn,
