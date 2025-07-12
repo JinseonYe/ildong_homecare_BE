@@ -1,17 +1,42 @@
+import { pool } from '../config/db';
 import * as buildingModel from '../models/buildingModel';
 import * as formatting from '../utils/formatting';
 import * as generateQuery from '../utils/generateQuery';
+import * as fileService from '../services/fileService';
 
 // 건물 등록하기
-export const createBuilding = async (buildingInfo: any) => {
+export const createBuilding = async (buildingInfo: any, files: any) => {
+  let conn;
   try {
-    const result = await buildingModel.insertBuildingInfo(buildingInfo);
-    if (result.affectedRows > 0) {
-      return true;
-    } else {
-      return false;
+    const createdAt = new Date();
+    conn = await pool.getConnection();
+    await conn.beginTransaction(); // 트랜잭션 시작
+
+    const result = await buildingModel.insertBuildingInfo(conn, buildingInfo);
+    if (result.affectedRows === 0) {
+      throw new Error('작업 내역 삽입 실패');
     }
-  } catch (error) {}
+
+    const buildingId = result.insertId; // 생성된 `building_id`
+    const targetType = 'building';
+
+    // 파일 정보 삽입
+    await fileService.insertFileInfos(
+      conn,
+      files,
+      buildingId,
+      targetType,
+      createdAt,
+    );
+
+    await conn.commit(); // 성공 시 커밋
+    return true;
+  } catch (error) {
+    if (conn) await conn.rollback(); // 에러 발생 시 롤백
+    throw error;
+  } finally {
+    if (conn) conn.release();
+  }
 };
 
 // 건물 전체 조회 하기

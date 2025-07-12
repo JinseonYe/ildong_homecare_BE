@@ -4,9 +4,17 @@ import * as buildingService from '../services/buildingService';
 // 건물 등록하기
 export const createBuilding = async (req: Request, res: Response) => {
   const buildingInfo = req.body;
+  const originalFiles = req.files;
+  let files: string[] = [];
+
+  if (Array.isArray(originalFiles)) {
+    files = originalFiles.map((originalFile) => originalFile.path);
+  } else {
+    console.log('파일이 업로드되지 않았습니다.');
+  }
 
   try {
-    const result = await buildingService.createBuilding(buildingInfo);
+    const result = await buildingService.createBuilding(buildingInfo, files);
 
     if (result) {
       return res.status(201).send({

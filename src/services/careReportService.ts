@@ -7,7 +7,7 @@ import * as generateQuery from '../utils/generateQuery';
 import * as userModel from '../models/userModel';
 import * as deviceModel from '../models/deviceModel';
 import * as pushService from '../services/pushService';
-import * as fileService from '../services/fileService';
+import * as fileService from '../services/fileService';
 
 // 작업내역 등록하기
 export const createCareReport = async (careReportInfo: any, files: any) => {

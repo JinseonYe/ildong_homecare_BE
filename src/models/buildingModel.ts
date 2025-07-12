@@ -2,8 +2,7 @@ import { FieldPacket, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
 
 // 건물 정보 등록
-export const insertBuildingInfo = async (buildingInfo: any) => {
-  let conn;
+export const insertBuildingInfo = async (conn: any, buildingInfo: any) => {
   const time = new Date();
 
   const { userId, buildingName, address } = buildingInfo;
@@ -13,8 +12,6 @@ export const insertBuildingInfo = async (buildingInfo: any) => {
     let sql = `
     INSERT INTO t_building (user_id, building_name, address, created_at)
         VALUES (?, ?, ?, ?)`;
-
-    conn = await pool.getConnection();
 
     const [result]: any = await conn.query(sql, values);
     return result;
@@ -33,10 +30,14 @@ export const fetchAllBuildingInfo = async () => {
 
   try {
     let sql = `
-      SELECT b.building_id, up.user_id, up.user_name, up.user_email, up.phone_number, b.building_name, b.address, b.created_at
+      SELECT b.building_id, up.user_id, up.user_name, up.user_email, up.phone_number, b.building_name, b.address, 
+      fu.file_name, fu.file_url, b.created_at
       FROM t_building AS b
       JOIN t_user_profile AS up ON b.user_id = up.user_id
+      LEFT JOIN t_file_upload AS fu ON b.building_id = fu.target_id
+        AND fu.target_type = 'building'
       WHERE is_deleted =?
+      ORDER BY b.building_id DESC
       `;
 
     conn = await pool.getConnection();
