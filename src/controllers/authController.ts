@@ -8,10 +8,19 @@ import * as userModel from '../models/userModel';
 // 회원가입 API
 export const register = async (req: Request, res: Response) => {
   const signupInfo = { ...req.body };
+  const originalFiles = req.files;
+  let files: string[] = [];
+
+  if (Array.isArray(originalFiles)) {
+    files = originalFiles.map((originalFile) => originalFile.path);
+  } else {
+    console.log('파일이 업로드되지 않았습니다.');
+  }
 
   try {
     const userCreationResult = await authService.createUserWithTransaction(
       signupInfo,
+      files,
     );
 
     // 회원 생성

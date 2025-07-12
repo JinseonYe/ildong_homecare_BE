@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import * as authModel from '../models/authModel';
 import { pool } from '../config/db';
 import * as formatting from '../utils/formatting';
+import * as fileService from '../services/fileService';
 
 // 비밀번호 해싱
 export const hashing = async (passowrd: string) => {
@@ -13,7 +14,7 @@ export const hashing = async (passowrd: string) => {
 };
 
 // 트랜잭션으로 사용자 생성 및 정보 삽입
-export const createUserWithTransaction = async (data: any) => {
+export const createUserWithTransaction = async (data: any, files: any) => {
   const hashedPassword = await hashing(data.password);
   data.password = hashedPassword; // 비밀번호 해싱하고 data에 다시 삽입
   const isApproved = data.isApproved;
@@ -30,6 +31,17 @@ export const createUserWithTransaction = async (data: any) => {
     if (isApproved) {
       await authModel.updateApprovalStatus(conn, isApproved, userId);
     }
+
+    const targetType = 'profile';
+
+    // 파일 정보 삽입
+    await fileService.insertFileInfos(
+      conn,
+      files,
+      userId,
+      targetType,
+      createdAt,
+    );
 
     await conn.commit(); // 모든 작업이 성공하면 커밋
     return { success: true };
