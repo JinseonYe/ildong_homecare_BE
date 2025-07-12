@@ -125,13 +125,29 @@ export const updateBuilding = async (
 
 // 건물 삭제하기
 export const deleteBuilding = async (buildingId: any) => {
+  let conn;
   try {
-    let result = await buildingModel.deleteBuilding(buildingId);
+    conn = await pool.getConnection();
+    await conn.beginTransaction(); // 트랜잭션 시작
+    let result: any = await buildingModel.deleteBuilding(buildingId);
 
-    if (result) {
-      return true;
-    } else {
-      return false;
+    if (result.affectedRows === 0) {
+      throw new Error('건물 정보 삭제 실패');
     }
-  } catch (error) {}
+
+    const targetType = 'building';
+    const fileDeletedResult = await fileService.softDeleteDocumentInfo(
+      conn,
+      buildingId,
+      targetType,
+    );
+
+    await conn.commit(); // 성공 시 커밋
+    return true;
+  } catch (error) {
+    if (conn) await conn.rollback(); // 에러 발생 시 롤백
+    throw error;
+  } finally {
+    if (conn) conn.release();
+  }
 };
