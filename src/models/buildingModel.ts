@@ -26,17 +26,18 @@ export const insertBuildingInfo = async (conn: any, buildingInfo: any) => {
 export const fetchAllBuildingInfo = async () => {
   let conn;
   const deleteStatus = 0;
-  const params = [deleteStatus];
+  const params = [deleteStatus, deleteStatus];
 
   try {
     let sql = `
       SELECT b.building_id, up.user_id, up.user_name, up.user_email, up.phone_number, b.building_name, b.address, 
       fu.file_name, fu.file_url, b.created_at
       FROM t_building AS b
-      JOIN t_user_profile AS up ON b.user_id = up.user_id
+      LEFT JOIN t_user_profile AS up ON b.user_id = up.user_id
       LEFT JOIN t_file_upload AS fu ON b.building_id = fu.target_id
         AND fu.target_type = 'building'
-      WHERE is_deleted =?
+        AND fu.is_deleted = ?
+      WHERE b.is_deleted =?
       ORDER BY b.building_id DESC
       `;
 
