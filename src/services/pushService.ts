@@ -189,17 +189,8 @@ export const getPushList = async (userId: any) => {
 // 알림 읽음처리
 export const updatePushReadStatus = async (notificationLogId: any) => {
   try {
-    const fetchedData = await pushModel.fetchPushListByUserId(
-      notificationLogId,
-    );
-
-    let result = formatting.toCamelCase(fetchedData);
-
-    if (result) {
+    const result = await pushModel.updatePushReadStatus(notificationLogId);
       return result;
-    } else {
-      return false;
-    }
   } catch (error) {
     console.log(error);
   }
