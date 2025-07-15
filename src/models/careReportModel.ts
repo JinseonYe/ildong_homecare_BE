@@ -254,7 +254,5 @@ export const updateCareReport = async (
     return result;
   } catch (error) {
     throw error;
-  } finally {
-    if (conn) conn.release();
   }
 };

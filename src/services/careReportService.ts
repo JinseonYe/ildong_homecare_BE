@@ -289,6 +289,7 @@ export const updateCareReport = async (
 
     const careStatusId = updateData.careStatusId;
     const { setQuery, values } = generateQuery.generateUpdateQuery(updateData);
+
     let result = await careReportModel.updateCareReport(
       conn,
       careReportId,
@@ -338,12 +339,13 @@ export const updateCareReport = async (
       );
     }
 
-    if (result.affectedRows > 0) {
-      return true;
-    } else {
-      return false; // 업데이트된 행이 없음
-    }
+    await conn.commit(); // 성공 시 커밋!
+    return true;
   } catch (error) {
+    if (conn) await conn.rollback(); // 실패 시 롤백!
     console.log('작업 내역 수정 실패: ', error);
+    return false;
+  } finally {
+    if (conn) conn.release();
   }
 };
