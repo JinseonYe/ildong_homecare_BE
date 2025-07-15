@@ -49,3 +49,23 @@ export const getPushList = async (req: Request, res: Response) => {
     });
   }
 };
+
+// 알림 내역 읽음처리
+export const updatePushReadStatus = async (req: Request, res: Response) => {
+  try {
+    const { notificationLogId } = req.query;
+
+    const result = await pushService.updatePushReadStatus(notificationLogId);
+
+    res.status(200).json({
+      success: true,
+      message: 'push 알림을 성공적으로 읽음처리했습니다.',
+    });
+  } catch (err: any) {
+    console.error(err);
+    res.status(err.status || 500).json({
+      success: false,
+      message: err.message || 'Something went wrong!',
+    });
+  }
+};
