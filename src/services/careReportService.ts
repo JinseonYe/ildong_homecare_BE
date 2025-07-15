@@ -136,14 +136,7 @@ export const getCareReports = async (careReportSearchDto: any) => {
     throw new Error('No search criteria provided');
   }
 
-  const { buildingName, page, pageSize, startDate, endDate } =
-    careReportSearchDto;
-
-  // 타입을 숫자로 바꾸면서 기본값 설정도 해줌
-  const pageToNumber = page ? Number(page) : 1;
-  const pageSizeToNumber = pageSize ? Number(pageSize) : 10;
-
-  const offset = (pageToNumber - 1) * pageSizeToNumber;
+  const { buildingName, startDate, endDate } = careReportSearchDto;
 
   let buildingNameWithlikePattern;
 
@@ -157,8 +150,6 @@ export const getCareReports = async (careReportSearchDto: any) => {
       startDate,
       endDate,
       buildingNameWithlikePattern,
-      pageSizeToNumber,
-      offset,
     );
 
     let result = formatting.toCamelCase(fetchedData, ['file_name', 'file_url']);

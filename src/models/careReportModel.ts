@@ -90,8 +90,6 @@ export const findCareReports = async (
   startDate?: string,
   endDate?: string,
   buildingName?: string,
-  pageSize?: number,
-  offset?: number,
 ) => {
   let conn;
   const deleteStatus = 0;
@@ -140,12 +138,6 @@ export const findCareReports = async (
     }
 
     sql += ` GROUP BY cr.care_report_id ORDER BY cr.created_at DESC`;
-
-    // 페이지네이션 적용
-    if (pageSize !== undefined && offset !== undefined) {
-      sql += ` LIMIT ? OFFSET ?`;
-      params.push(pageSize, offset);
-    }
 
     conn = await pool.getConnection();
     const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(

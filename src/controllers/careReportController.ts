@@ -92,14 +92,10 @@ export const getCareReports = async (req: Request, res: Response) => {
     const requestQuery = req.query;
     const requestQueryToCamel = formatting.toCamelCase(requestQuery);
     const buildingName = requestQueryToCamel.buildingName;
-    const page = requestQueryToCamel.page;
-    const pageSize = requestQueryToCamel.pageSize;
     const startDate = requestQueryToCamel.startDate;
     const endDate = requestQueryToCamel.endDate;
     const careReportSearchDto = {
       buildingName,
-      page,
-      pageSize,
       startDate,
       endDate,
     };
