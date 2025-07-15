@@ -31,26 +31,22 @@ export const createCareReport = async (req: Request, res: Response) => {
       const buildingName = buildingInfo.building_name; // 건물명
       const userName = userInfo.user_name; // 건물명
 
+      // 푸시 알림 시 필요한 정보들
       const title = `작업자: <${userName}> 님께서 건물명: <${buildingName}> 에 대한 작업내역이 등록하였습니다.`;
       const content = '테스트중임';
 
       // 푸시 대상 userId 배열
       const targetUserIds = [buildingOwnerId, ...admins.map((a) => a.user_id)];
-      // FCM 토큰 수집
-      let allTokens: string[] = [];
-      for (const userId of targetUserIds) {
-        const tokens = await deviceModel.findPushTokenInfoByUserId(userId);
-        if (tokens && tokens.length > 0) {
-          allTokens.push(
-            ...tokens.map((t: any) => t.push_token || t.pushToken),
-          );
-        }
-      }
-      // 중복 제거
-      allTokens = [...new Set(allTokens)].filter(Boolean);
-      if (allTokens.length > 0) {
-        await pushService.sendFCMNotification(allTokens, title, content);
-      }
+      const pushType = 'report';
+
+      // 푸시 알람 전송
+      await pushService.sendPushProcess(
+        targetUserIds,
+        title,
+        content,
+        pushType,
+      );
+
       return res.status(201).send({
         success: true,
         message: '작업 내역 등록을 성공했습니다.',

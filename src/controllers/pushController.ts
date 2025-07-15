@@ -5,13 +5,15 @@ import * as pushService from '../services/pushService';
 export const sendNotification = async (req: Request, res: Response) => {
   try {
     const { userId, title, body } = req.body;
-
-    const result = await pushService.sendNotificationService(
-      userId,
+    // userId가 단일 값이 아니라 배열일 수도 있으니 배열로 감싸서 넘김
+    const targetUserIds = Array.isArray(userId) ? userId : [userId];
+    const pushType = 'notification';
+    const result = await pushService.sendPushProcess(
+      targetUserIds,
       title,
       body,
+      pushType,
     );
-
     res.status(200).json({
       success: true,
       message: 'Successfully sent notification!',
@@ -33,9 +35,7 @@ export const sendNotification = async (req: Request, res: Response) => {
 export const getPushList = async (req: Request, res: Response) => {
   try {
     const { userId } = req.query;
-
     const result = await pushService.getPushList(userId);
-
     res.status(200).json({
       success: true,
       message: 'push 알림 리스트를 성공적으로 조회했습니다.',

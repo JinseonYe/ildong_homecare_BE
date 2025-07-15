@@ -48,19 +48,31 @@ const chunkArray = (array: string[], size: number) => {
 
 // push 토큰 유효성 검증
 export const validatePushToken = async (token: string) => {
-  try {
-    return true;
-  } catch (error) {
-    console.error('Token validation error:', error);
-    return false;
+  // 최소한의 포맷 체크
+  return typeof token === 'string' && token.length > 0;
+};
+
+// 타겟 user id 마다 push token 수집해서 반환
+export const collectPushToken = async (targetUserIds: any) => {
+  let allTokens: string[] = [];
+  for (const userId of targetUserIds) {
+    const tokens = await deviceModel.findPushTokenInfoByUserId(userId);
+    if (tokens && tokens.length > 0) {
+      allTokens.push(...tokens.map((t: any) => t.push_token || t.pushToken));
+    }
   }
+  // 중복 제거
+  allTokens = [...new Set(allTokens)].filter(Boolean);
+  return allTokens;
 };
 
 // 실제 FCM 전송 담당
 export const sendFCMNotification = async (
+  targetUserIds: any,
   tokens: string[],
   title: string,
   body: string,
+  pushType: any,
 ) => {
   let successCount = 0;
   let failureCount = 0;
@@ -110,72 +122,55 @@ export const sendFCMNotification = async (
       if (resp.success) {
         console.log(`[FCM SUCCESS] token: ${token}`);
       } else {
-        console.error(`[FCM FAIL] token: ${token}, error:`, resp.error?.message || resp.error);
+        console.error(
+          `[FCM FAIL] token: ${token}, error:`,
+          resp.error?.message || resp.error,
+        );
       }
     });
   }
 
-  console.log("[FCM SUMMARY] successCount:", successCount);
-  console.log("[FCM SUMMARY] failureCount:", failureCount);
-  
+  // 푸시 로그 저장 (userId별로)
+  for (const userId of targetUserIds) {
+    await pushModel.insertNotificationLog(
+      userId,
+      title,
+      body,
+      JSON.stringify(validTokens),
+      successCount,
+      failureCount,
+      pushType,
+    );
+  }
+
+  console.log('[FCM SUMMARY] successCount:', successCount);
+  console.log('[FCM SUMMARY] failureCount:', failureCount);
 
   return { successCount, failureCount };
 };
 
-// push 알림 보내기
-export const sendNotificationService = async (
-  userId: number,
+// push 알림 보내는 프로세스
+export const sendPushProcess = async (
+  targetUserIds: any,
   title: string,
   body: string,
+  pushType: any,
 ) => {
-  const pushTokenArr = await deviceModel.findPushTokenInfoByUserId(userId);
-
-  if (!pushTokenArr.length) {
-    throw new Error('User or push token not found');
-  }
-
-  const pushTokenList = formatting
-    .toCamelCase(pushTokenArr)
-    .map((tokenObj: any) => tokenObj.pushToken);
-
-  const { successCount, failureCount } = await sendFCMNotification(
-    pushTokenList,
+  const allTokens = await collectPushToken(targetUserIds);
+  return await sendFCMNotification(
+    targetUserIds,
+    allTokens,
     title,
     body,
+    pushType,
   );
-
-  if (successCount === 0) {
-    throw new Error('FCM push notification failed');
-  }
-
-  await pushModel.insertNotificationLog({
-    userId,
-    title,
-    body,
-    tokens: JSON.stringify(pushTokenList),
-    successCount,
-    failureCount,
-  });
-
-  return { successCount, failureCount };
-};
-
-// push 알림 보내기 (단일 사용자용)
-export const sendNotificationService = async (
-  userId: number,
-  title: string,
-  body: string,
-) => {
-  return await sendNotificationToMultipleUsers([userId], title, body, true);
 };
 
 // 알림 조회하기
 export const getPushList = async (userId: any) => {
   try {
     const fetchedData = await pushModel.fetchPushListByUserId(userId);
-
     let result = formatting.toCamelCase(fetchedData);
-
     if (result) {
       return result;
     } else {
@@ -190,7 +185,7 @@ export const getPushList = async (userId: any) => {
 export const updatePushReadStatus = async (notificationLogId: any) => {
   try {
     const result = await pushModel.updatePushReadStatus(notificationLogId);
-      return result;
+    return result;
   } catch (error) {
     console.log(error);
   }

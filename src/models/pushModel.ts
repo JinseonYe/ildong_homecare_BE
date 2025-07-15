@@ -2,30 +2,32 @@ import { FieldPacket, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
 
 // 알림 내용 저장
-export const insertNotificationLog = async (data: {
-  userId: number;
-  title: string;
-  body: string;
-  tokens: string;
-  successCount: number;
-  failureCount: number;
-}) => {
+export const insertNotificationLog = async (
+  userId: number,
+  title: string,
+  body: string,
+  tokens: string,
+  successCount: number,
+  failureCount: number,
+  pushType: any,
+) => {
   let conn;
 
   try {
     const sql = `
     INSERT INTO t_push_notification_log
-    (user_id, title, body, tokens, success_count, failure_count) 
-    VALUES (?, ?, ?, ?, ?, ?)
+    (user_id, title, body, tokens, success_count, failure_count, push_type) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
 
     const params = [
-      data.userId,
-      data.title,
-      data.body,
-      data.tokens,
-      data.successCount,
-      data.failureCount,
+      userId,
+      title,
+      body,
+      tokens,
+      successCount,
+      failureCount,
+      pushType,
     ];
 
     conn = await pool.getConnection();
@@ -50,7 +52,8 @@ export const fetchPushListByUserId = async (userId: any) => {
     let sql = `
         SELECT notification_log_id, title, body, push_type, is_read, created_at
         FROM t_push_notification_log
-        WHERE user_id =?`;
+        WHERE user_id =?
+        AND success_count > 0`;
 
     conn = await pool.getConnection();
 
