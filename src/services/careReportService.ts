@@ -324,26 +324,18 @@ export const updateCareReport = async (
       const adminUserRole = 0;
       const managers = await userModel.findUserByRole(managerUserRole);
       const admins = await userModel.findUserByRole(adminUserRole);
+
+      // 푸시 알람 전송 정보
       const users = [...(managers || []), ...(admins || [])];
-      let allTokens = [];
-      for (const user of users) {
-        const tokens = await deviceModel.findPushTokenInfoByUserId(
-          user.user_id,
-        );
-        if (tokens && tokens.length > 0) {
-          allTokens.push(
-            ...tokens.map((t: any) => t.push_token || t.pushToken),
-          );
-        }
-      }
-      allTokens = [...new Set(allTokens)].filter(Boolean);
-      if (allTokens.length > 0) {
-        await pushService.sendFCMNotification(
-          allTokens,
-          '작업내역 승인',
-          '작업내역이 승인되었습니다.',
-        );
-      }
+      const pushType = 'report';
+
+      // users 배열에서 user_id만 추출해서 넘김
+      await pushService.sendPushProcess(
+        users.map((u) => u.user_id),
+        '작업내역 승인',
+        '작업내역이 승인되었습니다.',
+        pushType,
+      );
     }
 
     if (result.affectedRows > 0) {
