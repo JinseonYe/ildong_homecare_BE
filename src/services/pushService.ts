@@ -159,3 +159,29 @@ export const sendNotificationService = async (
 
   return { successCount, failureCount };
 };
+
+// push 알림 보내기 (단일 사용자용)
+export const sendNotificationService = async (
+  userId: number,
+  title: string,
+  body: string,
+) => {
+  return await sendNotificationToMultipleUsers([userId], title, body, true);
+};
+
+// 알림 조회하기
+export const getPushList = async (userId: any) => {
+  try {
+    const fetchedData = await pushModel.fetchPushListByUserId(userId);
+
+    let result = formatting.toCamelCase(fetchedData);
+
+    if (result) {
+      return result;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};

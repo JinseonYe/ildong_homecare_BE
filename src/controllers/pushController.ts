@@ -28,3 +28,24 @@ export const sendNotification = async (req: Request, res: Response) => {
     });
   }
 };
+
+// 알림 조회하기
+export const getPushList = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.query;
+
+    const result = await pushService.getPushList(userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'push 알림 리스트를 성공적으로 조회했습니다.',
+      data: result,
+    });
+  } catch (err: any) {
+    console.error(err);
+    res.status(err.status || 500).json({
+      success: false,
+      message: err.message || 'Something went wrong!',
+    });
+  }
+};

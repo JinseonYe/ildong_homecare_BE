@@ -40,3 +40,28 @@ export const insertNotificationLog = async (data: {
     throw error;
   }
 };
+
+// userId 별로 알림 내역 조회
+export const fetchPushListByUserId = async (userId: any) => {
+  let conn;
+  const params: any[] = [userId];
+
+  try {
+    let sql = `
+        SELECT title, body, push_type, is_acked, created_at
+        FROM t_push_notification_log
+        WHERE user_id =?`;
+
+    conn = await pool.getConnection();
+
+    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
+      sql,
+      params,
+    );
+    return rows;
+  } catch (err) {
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+};
