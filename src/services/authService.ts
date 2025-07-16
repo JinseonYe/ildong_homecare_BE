@@ -1,3 +1,8 @@
+import {
+  NotFoundError,
+  BadRequest,
+  InternalServerError,
+} from '../errors/httpError';
 import bcrypt from 'bcrypt';
 import * as authModel from '../models/authModel';
 import { pool } from '../config/db';
@@ -46,9 +51,8 @@ export const createUserWithTransaction = async (data: any, files: any) => {
     await conn.commit(); // 모든 작업이 성공하면 커밋
     return { success: true };
   } catch (error) {
-    console.error('Error occurred:', error); // 오류 메시지 출력
     await conn.rollback(); // 오류가 발생하면 롤백
-    throw error;
+    throw new InternalServerError(`${error}`);
   } finally {
     conn.release(); // 연결 해제
   }
@@ -61,9 +65,7 @@ export const isUserEmailAvailable = async (userEmail: string) => {
 
     return count === 0; // count가 0이면 true(사용 가능), 1 이상이면 false(이미 존재)
   } catch (error) {
-    throw new Error(
-      error instanceof Error ? error.message : '서버 오류가 발생했습니다.',
-    );
+    throw new InternalServerError(`${error}`);
   }
 };
 

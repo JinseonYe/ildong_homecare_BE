@@ -1,3 +1,4 @@
+import { DatabaseError } from '../errors/databaseError';
 import { pool } from '../config/db';
 import { RowDataPacket, FieldPacket } from 'mysql2';
 
@@ -52,7 +53,9 @@ export const checkUserEmailExists = async (userEmail: string) => {
 
     return count;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] checkUserEmailExists: ${error}`, error);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -77,7 +80,9 @@ export const findUserById = async (userEmail: string) => {
     ]);
     return rows;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] findUserById: ${error}`, error);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -96,8 +101,9 @@ export const insertRefreshToken = async (
     conn = await pool.getConnection();
     conn.query(sql, [refreshToken, userId, currentTime]);
   } catch (error) {
-    console.error('Error occurred:', error);
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] insertRefreshToken: ${error}`, error);
+    }
   } finally {
     if (conn) conn.release();
   }

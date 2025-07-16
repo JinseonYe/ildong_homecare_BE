@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import * as authService from '../services/authService';
 import * as authModel from '../models/authModel';
 import * as authMiddleware from '../middlewares/authMiddleware';
@@ -6,7 +6,11 @@ import * as deviceService from '../services/deviceService';
 import * as userModel from '../models/userModel';
 
 // 회원가입 API
-export const register = async (req: Request, res: Response) => {
+export const register = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const signupInfo = { ...req.body };
   const originalFiles = req.files;
   let files: string[] = [];
@@ -36,6 +40,7 @@ export const register = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
+    next(error);
     const errorMessage =
       error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
 
@@ -47,7 +52,11 @@ export const register = async (req: Request, res: Response) => {
 };
 
 // Email 중복 확인 API
-export const verifyEmailDuplication = async (req: Request, res: Response) => {
+export const verifyEmailDuplication = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const userEmail: any = req.query.userEmail;
   try {
     const isUserEmailAvailable = await authService.isUserEmailAvailable(
@@ -66,6 +75,7 @@ export const verifyEmailDuplication = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
+    next(error);
     const errorMessage =
       error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
 
@@ -77,7 +87,11 @@ export const verifyEmailDuplication = async (req: Request, res: Response) => {
 };
 
 // 로그인 API
-export const login = async (req: Request, res: Response) => {
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const { userEmail, password, deviceInfo } = req.body;
 
   try {
@@ -149,7 +163,7 @@ export const login = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    next(error);
     return res
       .status(500)
       .send({ success: false, message: '서버 오류가 발생했습니다.' });

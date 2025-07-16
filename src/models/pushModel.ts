@@ -70,7 +70,7 @@ export const fetchPushListByUserId = async (userId: any) => {
     return rows;
   } catch (err) {
     if (err instanceof Error) {
-      throw new DatabaseError(`[Method] insertNotificationLog: ${err}`, err);
+      throw new DatabaseError(`[Method] fetchPushListByUserId: ${err}`, err);
     }
   } finally {
     if (conn) conn.release();
@@ -98,7 +98,7 @@ export const updatePushReadStatus = async (notificationLogId: any) => {
     return rows;
   } catch (err) {
     if (err instanceof Error) {
-      throw new DatabaseError(`[Method] insertNotificationLog: ${err}`, err);
+      throw new DatabaseError(`[Method] updatePushReadStatus: ${err}`, err);
     }
   } finally {
     if (conn) conn.release();
