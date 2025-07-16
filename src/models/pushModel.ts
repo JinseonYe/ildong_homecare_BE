@@ -1,5 +1,6 @@
 import { FieldPacket, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
+import { DatabaseError } from '../errors/databaseError';
 
 // 알림 내용 저장
 export const insertNotificationLog = async (
@@ -39,7 +40,12 @@ export const insertNotificationLog = async (
 
     return rows;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(
+        `[Method] insertNotificationLog: ${error}`,
+        error,
+      );
+    }
   }
 };
 
@@ -63,7 +69,9 @@ export const fetchPushListByUserId = async (userId: any) => {
     );
     return rows;
   } catch (err) {
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] insertNotificationLog: ${err}`, err);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -89,7 +97,9 @@ export const updatePushReadStatus = async (notificationLogId: any) => {
     );
     return rows;
   } catch (err) {
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] insertNotificationLog: ${err}`, err);
+    }
   } finally {
     if (conn) conn.release();
   }

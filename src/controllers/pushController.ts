@@ -1,8 +1,12 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import * as pushService from '../services/pushService';
 
 // 푸시 알림 보내기
-export const sendNotification = async (req: Request, res: Response) => {
+export const sendNotification = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { userId, title, body } = req.body;
     // userId가 단일 값이 아니라 배열일 수도 있으니 배열로 감싸서 넘김
@@ -23,16 +27,16 @@ export const sendNotification = async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
-    console.error('FCM send error:', err);
-    res.status(err.status || 500).json({
-      success: false,
-      message: err.message || 'Something went wrong!',
-    });
+    next(err);
   }
 };
 
 // 알림 조회하기
-export const getPushList = async (req: Request, res: Response) => {
+export const getPushList = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { userId } = req.query;
     const result = await pushService.getPushList(userId);
@@ -42,16 +46,16 @@ export const getPushList = async (req: Request, res: Response) => {
       data: result,
     });
   } catch (err: any) {
-    console.error(err);
-    res.status(err.status || 500).json({
-      success: false,
-      message: err.message || 'Something went wrong!',
-    });
+    next(err);
   }
 };
 
 // 알림 내역 읽음처리
-export const updatePushReadStatus = async (req: Request, res: Response) => {
+export const updatePushReadStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { notificationLogId } = req.body;
     const result = await pushService.updatePushReadStatus(notificationLogId);
@@ -60,10 +64,6 @@ export const updatePushReadStatus = async (req: Request, res: Response) => {
       message: 'push 알림을 성공적으로 읽음처리했습니다.',
     });
   } catch (err: any) {
-    console.error(err);
-    res.status(err.status || 500).json({
-      success: false,
-      message: err.message || 'Something went wrong!',
-    });
+    next(err);
   }
 };

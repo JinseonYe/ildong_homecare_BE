@@ -5,6 +5,12 @@ import * as pushModel from '../models/pushModel';
 import * as deviceModel from '../models/deviceModel';
 import * as formatting from '../utils/formatting';
 import { getMessaging } from 'firebase-admin/messaging';
+import {
+  NotFoundError,
+  BadRequest,
+  InternalServerError,
+} from '../errors/httpError';
+
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,7 +36,7 @@ const connect = () => {
       console.log('FCM Already Initialized');
     }
   } catch (error) {
-    console.error('FCM Initialization Error:', error);
+    throw new InternalServerError(`${error}`);
   }
 };
 
@@ -91,7 +97,7 @@ export const sendFCMNotification = async (
   }
 
   if (validTokens.length === 0) {
-    throw new Error('No valid FCM tokens found');
+    throw new NotFoundError('No valid FCM tokens found');
   }
 
   const tokenChunks = chunkArray(validTokens, MAX_FCM_LIMIT);
@@ -125,6 +131,11 @@ export const sendFCMNotification = async (
         console.error(
           `[FCM FAIL] token: ${token}, error:`,
           resp.error?.message || resp.error,
+        );
+        throw new Error(
+          `[FCM FAIL] token: ${token}, error: ${
+            resp.error?.message || resp.error
+          }`,
         );
       }
     });
@@ -177,7 +188,7 @@ export const getPushList = async (userId: any) => {
       return false;
     }
   } catch (error) {
-    console.log(error);
+    throw new InternalServerError(`${error}`);
   }
 };
 
@@ -187,6 +198,6 @@ export const updatePushReadStatus = async (notificationLogId: any) => {
     const result = await pushModel.updatePushReadStatus(notificationLogId);
     return result;
   } catch (error) {
-    console.log(error);
+    throw new InternalServerError(`${error}`);
   }
 };
