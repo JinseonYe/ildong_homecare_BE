@@ -124,3 +124,92 @@ export const updateApprovalStatus = async (
 
   await conn.query(sql, params);
 };
+
+// refreshToken이 DB에 존재하는지 확인
+export const isRefreshTokenValid = async (
+  refreshToken: string,
+  userId: number,
+) => {
+  let conn;
+  const activeStatus = 1;
+  const params = [refreshToken, userId, activeStatus];
+  try {
+    const sql = `
+      SELECT COUNT(*) AS count FROM t_token_user 
+      WHERE refresh_token = ? 
+      AND user_id = ?
+      AND is_active = ?
+      `;
+    conn = await pool.getConnection();
+    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
+      sql,
+      params,
+    );
+    return rows[0].count > 0;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] isRefreshTokenValid: ${error}`, error);
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+};
+
+// refreshToken을 DB에서 삭제
+export const deleteRefreshToken = async (
+  refreshToken: string,
+  userId: number,
+) => {
+  let conn;
+  const activeStatus = 0;
+  const now = new Date();
+  const params = [activeStatus, now, refreshToken, userId];
+  try {
+    const sql = `
+      UPDATE t_token_user SET is_active =?, updated_at =?
+      WHERE refresh_token =? 
+      AND user_id =?
+      `;
+    conn = await pool.getConnection();
+    await conn.query(sql, params);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] deleteRefreshToken: ${error}`, error);
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+};
+
+// refreshToken upsert (userId+deviceId 조합, is_deleted 관리)
+export const insertOrUpdateRefreshToken = async (
+  refreshToken: string,
+  userId: number,
+  deviceId: string,
+) => {
+  let conn;
+  const currentTime = new Date();
+  const activeStatus = 1;
+  const params = [refreshToken, userId, deviceId, currentTime, activeStatus];
+  try {
+    const sql = `
+      INSERT INTO t_token_user (refresh_token, user_id, device_id, created_at, is_active)
+      VALUES (?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        refresh_token = VALUES(refresh_token),
+        created_at = VALUES(created_at),
+        is_active = VALUES(is_active)
+    `;
+    conn = await pool.getConnection();
+    await conn.query(sql, params);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new DatabaseError(
+        `[Method] insertOrUpdateRefreshToken: ${error}`,
+        error,
+      );
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+};

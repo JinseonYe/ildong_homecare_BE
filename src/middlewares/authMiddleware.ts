@@ -1,9 +1,12 @@
-import JWT, { JwtPayload } from 'jsonwebtoken';
+import JWT, { JwtPayload, Secret, SignOptions } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { RowDataPacket, FieldPacket } from 'mysql2';
 import { pool } from '../config/db';
+import * as authModel from '../models/authModel';
+import { UnauthorizedError } from '../errors/httpError';
+import { SECRET_KEY } from '../config/jwt';
 
 dotenv.config();
 
@@ -16,9 +19,13 @@ interface Payload {
 // 토큰 생성 함수
 export const createToken = (
   payload: Payload,
-  secretKey: string,
+  secretKey: Secret,
   expiresIn: string,
 ) => {
+  const signOptions: SignOptions = {
+    algorithm: 'HS256',
+    expiresIn: expiresIn as any,
+  };
   const token = JWT.sign(
     {
       userId: payload.userId,
@@ -26,10 +33,7 @@ export const createToken = (
       userEmail: payload.userEmail,
     },
     secretKey,
-    {
-      algorithm: 'HS256',
-      expiresIn: expiresIn,
-    },
+    signOptions,
   );
   return token;
 };
@@ -131,13 +135,28 @@ export const refreshTokenMiddleware = async (req: Request, res: Response) => {
   } catch (accessTokenError) {
     // Access 토큰이 만료된 경우에만 Refresh 토큰을 확인
     try {
-      const decodedRefreshToken = JWT.verify(refreshToken, refreshSecretKey); // Refresh 토큰 검증
-
+      const decodedRefreshToken = JWT.verify(
+        refreshToken,
+        refreshSecretKey,
+      ) as JwtPayload; // Refresh 토큰 검증
+      const userId = (decodedRefreshToken as any).userId;
+      // DB에 refreshToken이 실제로 존재하는지 확인
+      const isValid = await authModel.isRefreshTokenValid(refreshToken, userId);
+      if (!isValid) {
+        return res.status(401).send({
+          success: false,
+          message: '권한이 없습니다. Refresh 토큰이 DB에 존재하지 않습니다.',
+        });
+      }
       // Refresh 토큰이 유효한 경우, 새로운 Access 토큰 발급
-      const newAccessToken = JWT.sign(
-        { userId: (decodedRefreshToken as any).userId },
+      const newAccessToken = createToken(
+        {
+          userId: (decodedRefreshToken as any).userId,
+          userName: (decodedRefreshToken as any).userName,
+          userEmail: (decodedRefreshToken as any).userEmail,
+        },
         secretKey,
-        { expiresIn: '1d' },
+        '1d',
       );
       res.setHeader('authorization', `Bearer ${newAccessToken}`); // Access 토큰 재발급
       return res.status(200).send({
@@ -148,7 +167,8 @@ export const refreshTokenMiddleware = async (req: Request, res: Response) => {
       // Refresh 토큰이 유효하지 않으면 401 응답
       return res.status(401).send({
         success: false,
-        message: '권한이 없습니다. Refresh 토큰이 만료되었습니다.',
+        message:
+          '권한이 없습니다. Refresh 토큰이 만료되었거나 유효하지 않습니다.',
       });
     }
   }

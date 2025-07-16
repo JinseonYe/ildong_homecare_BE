@@ -118,6 +118,7 @@ export const login = async (
     }
 
     // 로그인한 유저별 디바이스 정보 관리
+    let deviceId = '';
     if (deviceInfo) {
       const isDeviceInfoProcessed = await deviceService.processDeviceInfo(
         userId,
@@ -130,9 +131,16 @@ export const login = async (
           message: '디바이스 정보 처리에 실패했습니다.',
         });
       }
+      deviceId = deviceInfo.deviceUUID || '';
     }
 
     const userInfo = await userModel.findUserById(userId);
+    if (!userInfo || userInfo.length === 0) {
+      return res.status(400).send({
+        success: false,
+        message: '유저 정보를 찾을 수 없습니다.',
+      });
+    }
     const userRole = userInfo[0].user_role;
 
     const secretKey = process.env.SECRET_KEY ?? '';
@@ -151,7 +159,7 @@ export const login = async (
     res.setHeader('authorization', `Bearer ${token}`);
     res.setHeader('refresh', `Bearer ${refreshToken}`);
 
-    authModel.insertRefreshToken(refreshToken, userId); // db에 리프레시토큰 저장
+    authModel.insertOrUpdateRefreshToken(refreshToken, userId, deviceId); // db에 리프레시토큰 upsert
 
     return res.status(200).send({
       success: true,
