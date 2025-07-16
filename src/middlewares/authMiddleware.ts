@@ -153,3 +153,34 @@ export const refreshTokenMiddleware = async (req: Request, res: Response) => {
     }
   }
 };
+
+export interface TokenPayload {
+  uuid: string;
+  email: string;
+  name: string;
+  role: string;
+  companyId: number;
+}
+
+/**
+ * 토큰으로부터 유저 정보 얻기
+ */
+export const getUserFromToken = (req: Request): TokenPayload => {
+  // Authorization 헤더에서 토큰 추출 (형식: Bearer <token>)
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('토큰 없음');
+  }
+
+  const token = authHeader.split(' ')[1]; // Bearer 다음의 토큰 부분만 추출
+  try {
+    // JWT 검증 + payload 추출
+    const decoded = JWT.verify(token, SECRET_KEY) as TokenPayload;
+    return decoded;
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') {
+      throw new UnauthorizedError('Access token expired');
+    }
+    throw new UnauthorizedError('Invalid access token');
+  }
+};
