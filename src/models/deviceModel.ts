@@ -1,3 +1,4 @@
+import { DatabaseError } from '../errors/databaseError';
 import { pool } from '../config/db';
 
 // FCM 토큰 저장
@@ -22,7 +23,9 @@ export const insertDeviceInfo = async (userId: any, deviceInfo: any) => {
 
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] insertDeviceInfo: ${error}`, error);
+    }
   }
 };
 
@@ -44,7 +47,12 @@ export const findDeviceInfoByUserId = async (userId: any, deviceUUID: any) => {
 
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(
+        `[Method] findDeviceInfoByUserId: ${error}`,
+        error,
+      );
+    }
   }
 };
 
@@ -65,7 +73,12 @@ export const findPushTokenInfoByUserId = async (userId: any) => {
 
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(
+        `[Method] findPushTokenInfoByUserId: ${error}`,
+        error,
+      );
+    }
   }
 };
 
@@ -88,6 +101,8 @@ export const updateDeviceInfo = async (userId: any, deviceInfo: any) => {
 
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] updateDeviceInfo: ${error}`, error);
+    }
   }
 };

@@ -1,3 +1,5 @@
+import { DatabaseError } from '../errors/databaseError';
+
 // DB에 파일 정보 삽입
 export const insertDocumentInfo = async (
   conn: any,
@@ -26,7 +28,9 @@ export const insertDocumentInfo = async (
     const [result]: any = await conn.query(sql, params);
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] insertDocumentInfo: ${error}`, error);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -48,7 +52,12 @@ export const softDeleteDocumentInfo = async (
     const [result]: any = await conn.query(sql, params);
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(
+        `[Method] softDeleteDocumentInfo: ${error}`,
+        error,
+      );
+    }
   } finally {
     if (conn) conn.release();
   }

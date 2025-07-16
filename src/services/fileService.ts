@@ -1,3 +1,8 @@
+import {
+  NotFoundError,
+  BadRequest,
+  InternalServerError,
+} from '../errors/httpError';
 import * as fileModel from '../models/fileModel';
 import path from 'path';
 import fs from 'fs';

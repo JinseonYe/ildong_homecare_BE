@@ -1,3 +1,8 @@
+import {
+  NotFoundError,
+  BadRequest,
+  InternalServerError,
+} from '../errors/httpError';
 import * as deviceModel from '../models/deviceModel';
 import * as formatting from '../utils/formatting';
 
@@ -32,6 +37,6 @@ export const processDeviceInfo = async (userId: any, deviceInfo: any) => {
 
     return result;
   } catch (error) {
-    throw error;
+    throw new InternalServerError(`${error}`);
   }
 };
