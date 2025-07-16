@@ -1,3 +1,4 @@
+import { DatabaseError } from '../errors/databaseError';
 import { FieldPacket, RowDataPacket, ResultSetHeader } from 'mysql2';
 import { pool } from '../config/db';
 
@@ -23,7 +24,9 @@ export const insertCareReport = async (conn: any, careReportInfo: any) => {
     const [result]: any = await conn.query(sql, values);
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] insertCareReport: ${error}`, error);
+    }
   }
 };
 
@@ -37,7 +40,9 @@ export const insertCareCategory = async (conn: any, categoryValues: any) => {
     const [result]: any = await conn.query(sql, [categoryValues]);
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] insertCareCategory: ${error}`, error);
+    }
   }
 };
 
@@ -60,7 +65,9 @@ export const fetchAllCareStatus = async () => {
     );
     return rows;
   } catch (err) {
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] fetchAllCareStatus: ${err}`, err);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -80,7 +87,12 @@ export const getValidCareCategoryIds = async (
 
     return rows.map((row: any) => row.care_category_id);
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(
+        `[Method] getValidCareCategoryIds: ${error}`,
+        error,
+      );
+    }
   }
 };
 
@@ -146,7 +158,9 @@ export const findCareReports = async (
     );
     return rows;
   } catch (err) {
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] findCareReports: ${err}`, err);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -179,8 +193,12 @@ export const updateCareStatusByReportId = async (
 
     return result;
   } catch (err) {
-    console.log('상태 수정 중 오류:', err);
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(
+        `[Method] updateCareStatusByReportId: ${err}`,
+        err,
+      );
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -225,7 +243,9 @@ export const findCareReportById = async (
 
     return rows;
   } catch (err) {
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] findCareReportById: ${err}`, err);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -253,6 +273,8 @@ export const updateCareReport = async (
 
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] updateCareReport: ${error}`, error);
+    }
   }
 };
