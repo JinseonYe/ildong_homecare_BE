@@ -1,3 +1,4 @@
+import { DatabaseError } from '../errors/databaseError';
 import { FieldPacket, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
 import { UserSearchDto } from '../interfaces/userInterface';
@@ -25,7 +26,9 @@ export const updateUserProfile = async (
 
     return rows;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] updateUserProfile: ${error}`, error);
+    }
   } finally {
     if (conn) conn.release(); // DB 연결 해제
   }
@@ -71,11 +74,8 @@ export const findUsers = async (
       pageSize: pageSize,
     };
   } catch (error) {
-    // error를 Error 객체로 타입 단언
     if (error instanceof Error) {
-      throw new Error(`Error while fetching users: ${error.message}`);
-    } else {
-      throw new Error('An unknown error occurred while fetching users');
+      throw new DatabaseError(`[Method] findUsers: ${error}`, error);
     }
   } finally {
     if (conn) conn.release();
@@ -110,7 +110,9 @@ export const findUserById = async (userId: any) => {
     );
     return rows;
   } catch (err) {
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] findUserById: ${err}`, err);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -140,7 +142,9 @@ export const findUserByRole = async (userRole: any) => {
     );
     return rows;
   } catch (err) {
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] findUserByRole: ${err}`, err);
+    }
   } finally {
     if (conn) conn.release();
   }

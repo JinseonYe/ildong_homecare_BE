@@ -1,10 +1,15 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/userService';
 import { UserSearchDto } from '../interfaces/userInterface';
 import * as formatting from '../utils/formatting';
+import { NotFoundError } from '../errors/httpError';
 
 // 유저 프로필 업데이트
-export const updateUserProfile = async (req: Request, res: Response) => {
+export const updateUserProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const { files, fileNameUrl, ...updateData } = req.body;
   const { userId } = req.params;
   const originalFiles = req.files;
@@ -13,7 +18,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
   if (Array.isArray(originalFiles)) {
     filePaths = originalFiles.map((originalFile) => originalFile.path);
   } else {
-    console.log('파일이 업로드되지 않았습니다.');
+    throw new NotFoundError('파일이 업로드되지 않았습니다.');
   }
 
   try {
@@ -48,18 +53,16 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
-
-    return res.status(500).send({
-      success: false,
-      message: errorMessage,
-    });
+    next(error);
   }
 };
 
 // 유저 목록 조회
-export const getUsers = async (req: Request, res: Response) => {
+export const getUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     // 쿼리 파라미터 추출 및 기본값 설정
     const userRole = req.query.userRole
@@ -98,18 +101,16 @@ export const getUsers = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    // 에러 처리
-    const errorMessage =
-      error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
-    return res.status(500).json({
-      success: false,
-      message: errorMessage,
-    });
+    next(error);
   }
 };
 
 // id별로 유저 조회
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     // 쿼리 파라미터 추출 및 기본값 설정
     let userId = req.query.userId;
@@ -126,12 +127,6 @@ export const getUserById = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    // 에러 처리
-    const errorMessage =
-      error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
-    return res.status(500).json({
-      success: false,
-      message: errorMessage,
-    });
+    next(error);
   }
 };

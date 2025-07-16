@@ -1,3 +1,8 @@
+import {
+  NotFoundError,
+  BadRequest,
+  InternalServerError,
+} from '../errors/httpError';
 import { pool } from '../config/db';
 import * as userModel from '../models/userModel';
 import * as buildingModel from '../models/buildingModel';
@@ -15,11 +20,11 @@ export const updateUserProfile = async (
   let conn;
 
   if (!userId) {
-    throw new Error('User ID is required');
+    throw new BadRequest('User ID is required');
   }
 
   if (!updateData || Object.keys(updateData).length === 0) {
-    throw new Error('No data to update');
+    throw new NotFoundError('No data to update');
   }
 
   try {
@@ -38,7 +43,7 @@ export const updateUserProfile = async (
     );
 
     if (result.affectedRows === 0) {
-      throw new Error('유저 정보 수정 실패');
+      throw new NotFoundError('유저 정보 수정 실패');
     }
 
     const targetType = 'profile';
@@ -62,7 +67,7 @@ export const updateUserProfile = async (
     return result;
   } catch (error) {
     if (conn) await conn.rollback(); // 에러 발생 시 롤백
-    throw error;
+    throw new InternalServerError(`${error}`);
   } finally {
     if (conn) conn.release();
   }
@@ -72,7 +77,7 @@ export const updateUserProfile = async (
 export const getUsers = async (userDto: UserSearchDto) => {
   // DTO 유효성 검사
   if (!userDto) {
-    throw new Error('No search criteria provided');
+    throw new BadRequest('No search criteria provided');
   }
 
   const { userRole, approved, page, pageSize } = userDto;
@@ -113,12 +118,7 @@ export const getUsers = async (userDto: UserSearchDto) => {
     const resultToCamel = formatting.toCamelCase(result);
     return resultToCamel;
   } catch (error: unknown) {
-    // error를 Error 객체로 타입 단언
-    if (error instanceof Error) {
-      throw new Error(`Error while fetching users: ${error.message}`);
-    } else {
-      throw new Error('An unknown error occurred while fetching users');
-    }
+    throw new InternalServerError(`${error}`);
   }
 };
 
@@ -126,7 +126,7 @@ export const getUsers = async (userDto: UserSearchDto) => {
 export const getUserById = async (userId: any) => {
   // DTO 유효성 검사
   if (!userId) {
-    throw new Error('No search criteria provided');
+    throw new BadRequest('No search criteria provided');
   }
 
   try {
@@ -134,12 +134,7 @@ export const getUserById = async (userId: any) => {
     const resultToCamel = formatting.toCamelCase(result);
     return resultToCamel;
   } catch (error: unknown) {
-    // error를 Error 객체로 타입 단언
-    if (error instanceof Error) {
-      throw new Error(`Error while fetching users: ${error.message}`);
-    } else {
-      throw new Error('An unknown error occurred while fetching users');
-    }
+    throw new InternalServerError(`${error}`);
   }
 };
 
@@ -148,7 +143,7 @@ export const getBuildingInfo = async (buildingId: number) => {
   // 건물 정보 조회
   const buildingInfo = await buildingModel.fetchBuildingById(buildingId);
   if (!buildingInfo || buildingInfo.length === 0) {
-    throw new Error('해당 건물 정보를 찾을 수 없습니다.');
+    throw new NotFoundError('해당 건물 정보를 찾을 수 없습니다.');
   }
 
   return buildingInfo[0];
@@ -158,7 +153,7 @@ export const getUserInfo = async (userId: number) => {
   // 유저 정보 조회
   const userInfo = await userModel.findUserById(userId);
   if (!userInfo || userInfo.length === 0) {
-    throw new Error('해당 유저 정보를 찾을 수 없습니다.');
+    throw new NotFoundError('해당 유저 정보를 찾을 수 없습니다.');
   }
 
   return userInfo[0];
@@ -170,7 +165,7 @@ export const getAdmins = async () => {
   // user_role이 admin인 유저 전체 조회
   const admins = await userModel.findUserByRole(adminUserRole);
   if (!admins) {
-    throw new Error('관리자 정보를 찾을 수 없습니다.');
+    throw new NotFoundError('관리자 정보를 찾을 수 없습니다.');
   }
   return admins;
 };
