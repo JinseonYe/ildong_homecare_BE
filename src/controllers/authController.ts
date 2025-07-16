@@ -164,8 +164,5 @@ export const login = async (
     });
   } catch (error) {
     next(error);
-    return res
-      .status(500)
-      .send({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };

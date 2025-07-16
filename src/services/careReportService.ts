@@ -1,3 +1,9 @@
+import {
+  NotFoundError,
+  BadRequest,
+  InternalServerError,
+} from '../errors/httpError';
+
 import * as careReportModel from '../models/careReportModel';
 import * as formatting from '../utils/formatting';
 import { pool } from '../config/db';
@@ -20,7 +26,7 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
     // 작업 내역 등록
     const result = await careReportModel.insertCareReport(conn, careReportInfo);
     if (result.affectedRows === 0) {
-      throw new Error('작업 내역 삽입 실패');
+      throw new NotFoundError('작업 내역 삽입 실패');
     }
 
     const careReportId = result.insertId; // 생성된 `care_report_id`
@@ -55,7 +61,7 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
       );
 
       if (invalidCategoryIds.length > 0) {
-        throw new Error(
+        throw new BadRequest(
           `존재하지 않는 카테고리 ID: ${invalidCategoryIds.join(', ')}`,
         );
       }
@@ -73,7 +79,7 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
     return true;
   } catch (error) {
     if (conn) await conn.rollback(); // 에러 발생 시 롤백
-    throw error;
+    throw new InternalServerError(`${error}`);
   } finally {
     if (conn) conn.release();
   }
@@ -126,14 +132,16 @@ export const getAllCareStatus = async () => {
     } else {
       return false;
     }
-  } catch (error) {}
+  } catch (error) {
+    throw new InternalServerError(`${error}`);
+  }
 };
 
 // 작업 내역 조회하기
 export const getCareReports = async (careReportSearchDto: any) => {
   // DTO 유효성 검사
   if (!careReportSearchDto) {
-    throw new Error('No search criteria provided');
+    throw new BadRequest('No search criteria provided');
   }
 
   const { buildingName, startDate, endDate } = careReportSearchDto;
@@ -160,7 +168,7 @@ export const getCareReports = async (careReportSearchDto: any) => {
       return false;
     }
   } catch (error) {
-    console.log(error);
+    throw new InternalServerError(`${error}`);
   }
 };
 
@@ -168,7 +176,7 @@ export const getCareReports = async (careReportSearchDto: any) => {
 export const getCareReportById = async (careReportId: any) => {
   // DTO 유효성 검사
   if (!careReportId) {
-    throw new Error('No search criteria provided');
+    throw new BadRequest('No search criteria provided');
   }
   const targetType = 'carereport';
 
@@ -191,7 +199,7 @@ export const getCareReportById = async (careReportId: any) => {
 
     return result;
   } catch (error) {
-    console.log(error);
+    throw new InternalServerError(`${error}`);
   }
 };
 
@@ -239,7 +247,7 @@ export const formmatFetchedAllCareReport = async (
 
     return result;
   } catch (error) {
-    console.log(error);
+    throw new InternalServerError(`${error}`);
   }
 };
 
@@ -253,7 +261,9 @@ export const checkIsBuildingOwner = async (
     const building = await buildingService.fetchBuildingById(buildingId);
 
     if (!building || building.length === 0) {
-      throw new Error(`건물 ID ${buildingId}에 해당하는 정보가 없습니다.`);
+      throw new NotFoundError(
+        `건물 ID ${buildingId}에 해당하는 정보가 없습니다.`,
+      );
     }
 
     const buildingOwnerId = building[0].userId;
@@ -265,7 +275,7 @@ export const checkIsBuildingOwner = async (
       console.log('사용자는 건물주가 아닙니다.');
     }
   } catch (err) {
-    console.log('건물주 확인 중 오류:', err);
+    throw new InternalServerError(`${err}`);
   }
 };
 
@@ -299,7 +309,7 @@ export const updateCareReport = async (
     );
 
     if (result.affectedRows === 0) {
-      throw new Error('작업 내역 정보 수정 실패');
+      throw new NotFoundError('작업 내역 정보 수정 실패');
     }
 
     const targetType = 'carereport';
@@ -343,8 +353,7 @@ export const updateCareReport = async (
     return true;
   } catch (error) {
     if (conn) await conn.rollback(); // 실패 시 롤백!
-    console.log('작업 내역 수정 실패: ', error);
-    return false;
+    throw new InternalServerError(`${error}`);
   } finally {
     if (conn) conn.release();
   }

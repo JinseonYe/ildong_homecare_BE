@@ -1,12 +1,17 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import * as careReportService from '../services/careReportService';
 import * as formatting from '../utils/formatting';
 import * as userService from '../services/userService';
 import * as pushService from '../services/pushService';
 import * as deviceModel from '../models/deviceModel';
+import { BadRequest, NotFoundError } from '../errors/httpError';
 
 // 작업내역 등록하기
-export const createCareReport = async (req: Request, res: Response) => {
+export const createCareReport = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const body = req.body;
   const buildingId = req.body.buildingId;
   const userId = req.body.userId;
@@ -16,7 +21,7 @@ export const createCareReport = async (req: Request, res: Response) => {
   if (Array.isArray(originalFiles)) {
     files = originalFiles.map((originalFile) => originalFile.path);
   } else {
-    console.log('파일이 업로드되지 않았습니다.');
+    throw new BadRequest('파일이 업로드되지 않았습니다.');
   }
 
   try {
@@ -53,16 +58,16 @@ export const createCareReport = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.log('작업 내역 등록 실패: ', error);
-    return res.status(500).send({
-      success: false,
-      message: '서버 오류로 작업 내역 등록 실패',
-    });
+    next(error);
   }
 };
 
 // 작업 상태 조회하기
-export const getAllCareStatus = async (req: Request, res: Response) => {
+export const getAllCareStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const result = await careReportService.getAllCareStatus();
 
@@ -74,16 +79,16 @@ export const getAllCareStatus = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.log('작업 상태 조회 실패: ', error);
-    return res.status(500).send({
-      success: false,
-      message: '서버 오류로 작업 상태 조회 실패',
-    });
+    next(error);
   }
 };
 
 // 작업 내역 조회하기
-export const getCareReports = async (req: Request, res: Response) => {
+export const getCareReports = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const requestQuery = req.query;
     const requestQueryToCamel = formatting.toCamelCase(requestQuery);
@@ -106,16 +111,16 @@ export const getCareReports = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.log('작업 내역 조회 실패: ', error);
-    return res.status(500).send({
-      success: false,
-      message: '서버 오류로 작업 내역 조회 실패',
-    });
+    next(error);
   }
 };
 
 // Id별로 작업 내역 조회하기
-export const getCareReportById = async (req: Request, res: Response) => {
+export const getCareReportById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const requestQuery = req.query;
     const requestQueryToCamel = formatting.toCamelCase(requestQuery);
@@ -138,16 +143,16 @@ export const getCareReportById = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.log('작업 내역 조회 실패: ', error);
-    return res.status(500).send({
-      success: false,
-      message: '서버 오류로 작업 내역 조회 실패',
-    });
+    next(error);
   }
 };
 
 // 작업 내역 수정하기
-export const updateCareReport = async (req: Request, res: Response) => {
+export const updateCareReport = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { files, fileNameUrl, ...updateData } = req.body;
     const careReportId = req.params.careReportId;
@@ -157,7 +162,7 @@ export const updateCareReport = async (req: Request, res: Response) => {
     if (Array.isArray(originalFiles)) {
       filePaths = originalFiles.map((originalFile) => originalFile.path);
     } else {
-      console.log('파일이 업로드되지 않았습니다.');
+      throw new NotFoundError('파일이 업로드되지 않았습니다.');
     }
 
     // 작업내역 ID 가 포함되었는지 확인
@@ -187,10 +192,6 @@ export const updateCareReport = async (req: Request, res: Response) => {
       }
     }
   } catch (error) {
-    console.log('작업 내역 수정 실패: ', error);
-    return res.status(500).send({
-      success: false,
-      message: '서버 오류로 작업 내역 수정 실패',
-    });
+    next(error);
   }
 };

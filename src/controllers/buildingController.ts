@@ -28,10 +28,6 @@ export const createBuilding = async (
     }
   } catch (error) {
     next(error);
-    return res.status(500).send({
-      success: false,
-      message: '서버 오류로 건물 등록 실패',
-    });
   }
 };
 
@@ -53,10 +49,6 @@ export const getAllBuilding = async (
     }
   } catch (error) {
     next(error);
-    return res.status(500).send({
-      success: false,
-      message: '서버 오류로 건물 전체 조회 실패',
-    });
   }
 };
 
@@ -114,10 +106,6 @@ export const updateBuilding = async (
     }
   } catch (error) {
     next(error);
-    return res.status(500).send({
-      success: false,
-      message: '서버 오류로 건물 업데이트 실패',
-    });
   }
 };
 
@@ -140,9 +128,5 @@ export const deleteBuilding = async (
     }
   } catch (error) {
     next(error);
-    return res.status(500).send({
-      success: false,
-      message: '서버 오류로 건물 삭제 실패',
-    });
   }
 };
