@@ -1,5 +1,7 @@
+import { DatabaseError } from '../errors/databaseError';
 import { FieldPacket, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
+import { NotFoundError } from '../errors/httpError';
 
 // 건물 정보 등록
 export const insertBuildingInfo = async (conn: any, buildingInfo: any) => {
@@ -16,7 +18,9 @@ export const insertBuildingInfo = async (conn: any, buildingInfo: any) => {
     const [result]: any = await conn.query(sql, values);
     return result;
   } catch (err) {
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] insertBuildingInfo: ${err}`, err);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -49,12 +53,14 @@ export const fetchAllBuildingInfo = async () => {
     );
 
     if (rows.length === 0) {
-      throw new Error('No buildings found');
+      throw new NotFoundError('No buildings found');
     }
 
     return rows;
   } catch (err) {
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] fetchAllBuildingInfo: ${err}`, err);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -86,7 +92,9 @@ export const fetchBuildingById = async (buildingId: any) => {
     );
     return rows;
   } catch (err) {
-    throw err;
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] fetchBuildingById: ${err}`, err);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -114,7 +122,9 @@ export const updateBuilding = async (
 
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] updateBuilding: ${error}`, error);
+    }
   } finally {
     if (conn) conn.release();
   }
@@ -140,7 +150,9 @@ export const deleteBuilding = async (buildingId: any) => {
 
     return result.affectedRows > 0;
   } catch (error) {
-    throw error;
+    if (error instanceof Error) {
+      throw new DatabaseError(`[Method] deleteBuilding: ${error}`, error);
+    }
   } finally {
     if (conn) conn.release();
   }

@@ -1,8 +1,12 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import * as buildingService from '../services/buildingService';
 
 // 건물 등록하기
-export const createBuilding = async (req: Request, res: Response) => {
+export const createBuilding = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const buildingInfo = req.body;
   const originalFiles = req.files;
   let files: string[] = [];
@@ -23,7 +27,7 @@ export const createBuilding = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.log('건물 등록 실패: ', error);
+    next(error);
     return res.status(500).send({
       success: false,
       message: '서버 오류로 건물 등록 실패',
@@ -32,7 +36,11 @@ export const createBuilding = async (req: Request, res: Response) => {
 };
 
 // 건물 전체 조회하기
-export const getAllBuilding = async (req: Request, res: Response) => {
+export const getAllBuilding = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const result = await buildingService.getAllBuilding();
 
@@ -44,7 +52,7 @@ export const getAllBuilding = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.log('건물 전체 조회 실패: ', error);
+    next(error);
     return res.status(500).send({
       success: false,
       message: '서버 오류로 건물 전체 조회 실패',
@@ -53,7 +61,11 @@ export const getAllBuilding = async (req: Request, res: Response) => {
 };
 
 // 건물 정보 업데이트하기
-export const updateBuilding = async (req: Request, res: Response) => {
+export const updateBuilding = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const { files, fileNameUrl, ...updateData } = req.body;
   const buildingId = req.params.buildingId;
   const originalFiles = req.files;
@@ -101,7 +113,7 @@ export const updateBuilding = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.log('건물 업데이트 실패: ', error);
+    next(error);
     return res.status(500).send({
       success: false,
       message: '서버 오류로 건물 업데이트 실패',
@@ -110,7 +122,11 @@ export const updateBuilding = async (req: Request, res: Response) => {
 };
 
 // 건물 삭제하기
-export const deleteBuilding = async (req: Request, res: Response) => {
+export const deleteBuilding = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const buildingId = req.params.buildingId;
 
   try {
@@ -123,7 +139,7 @@ export const deleteBuilding = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.log('건물 삭제 실패: ', error);
+    next(error);
     return res.status(500).send({
       success: false,
       message: '서버 오류로 건물 삭제 실패',

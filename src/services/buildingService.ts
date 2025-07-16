@@ -1,3 +1,8 @@
+import {
+  NotFoundError,
+  BadRequest,
+  InternalServerError,
+} from '../errors/httpError';
 import { pool } from '../config/db';
 import * as buildingModel from '../models/buildingModel';
 import * as formatting from '../utils/formatting';
@@ -14,7 +19,7 @@ export const createBuilding = async (buildingInfo: any, files: any) => {
 
     const result = await buildingModel.insertBuildingInfo(conn, buildingInfo);
     if (result.affectedRows === 0) {
-      throw new Error('작업 내역 삽입 실패');
+      throw new NotFoundError('작업 내역 삽입 실패');
     }
 
     const buildingId = result.insertId; // 생성된 `building_id`
@@ -33,7 +38,7 @@ export const createBuilding = async (buildingInfo: any, files: any) => {
     return true;
   } catch (error) {
     if (conn) await conn.rollback(); // 에러 발생 시 롤백
-    throw error;
+    throw new InternalServerError(`${error}`);
   } finally {
     if (conn) conn.release();
   }
@@ -50,7 +55,7 @@ export const getAllBuilding = async () => {
       return false;
     }
   } catch (error) {
-    throw error;
+    throw new InternalServerError(`${error}`);
   }
 };
 
@@ -64,7 +69,9 @@ export const fetchBuildingById = async (buildingId: any) => {
     } else {
       return false;
     }
-  } catch (error) {}
+  } catch (error) {
+    throw new InternalServerError(`${error}`);
+  }
 };
 
 // 건물 정보 업데이트하기
@@ -90,7 +97,7 @@ export const updateBuilding = async (
     );
 
     if (result.affectedRows === 0) {
-      throw new Error('건물 정보 수정 실패');
+      throw new NotFoundError('건물 정보 수정 실패');
     }
 
     const targetType = 'building';
@@ -113,7 +120,7 @@ export const updateBuilding = async (
     return true;
   } catch (error) {
     if (conn) await conn.rollback(); // 에러 발생 시 롤백
-    throw error;
+    throw new InternalServerError(`${error}`);
   } finally {
     if (conn) conn.release();
   }
@@ -128,7 +135,7 @@ export const deleteBuilding = async (buildingId: any) => {
     let result: any = await buildingModel.deleteBuilding(buildingId);
 
     if (result.affectedRows === 0) {
-      throw new Error('건물 정보 삭제 실패');
+      throw new NotFoundError('건물 정보 삭제 실패');
     }
 
     const targetType = 'building';
@@ -142,7 +149,7 @@ export const deleteBuilding = async (buildingId: any) => {
     return true;
   } catch (error) {
     if (conn) await conn.rollback(); // 에러 발생 시 롤백
-    throw error;
+    throw new InternalServerError(`${error}`);
   } finally {
     if (conn) conn.release();
   }
