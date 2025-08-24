@@ -45,12 +45,13 @@ export const createCareReport = async (
       const pushType = 'report';
 
       // 푸시 알람 전송
-      await pushService.sendPushProcess(
-        targetUserIds,
-        title,
-        content,
-        pushType,
-      );
+      try {
+        await pushService.sendPushProcess(
+          targetUserIds,
+          title,
+          content,
+          pushType,
+        );
       } catch (pushError) {
         // FCM 에러가 발생해도 작업내역 등록은 계속 진행
         console.error('푸시 알림 전송 실패:', pushError);
@@ -98,10 +99,12 @@ export const getCareReports = async (
     const requestQuery = req.query;
     const requestQueryToCamel = formatting.toCamelCase(requestQuery);
     const buildingName = requestQueryToCamel.buildingName;
+    const userId = requestQueryToCamel.userId;
     const startDate = requestQueryToCamel.startDate;
     const endDate = requestQueryToCamel.endDate;
     const careReportSearchDto = {
       buildingName,
+      userId,
       startDate,
       endDate,
     };

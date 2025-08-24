@@ -99,9 +99,11 @@ export const getValidCareCategoryIds = async (
 // 필터별로 작업 내역 조회
 // TODO: 우선 모든 카테고리 id를 한 컬럼에 넣어서 문자로 묶어서 보내는데 요구사항 수정에 따라 변경 가능함
 export const findCareReports = async (
+  userRole?: any,
   startDate?: string,
   endDate?: string,
   buildingName?: string,
+  currentUserId?: any, // 현재 로그인한 사용자 ID 추가
 ) => {
   let conn;
   const deleteStatus = 0;
@@ -133,6 +135,27 @@ export const findCareReports = async (
         ON cr.building_id = b.building_id
       WHERE cr.is_deleted = ?`;
 
+    // userRole에 따른 조회 권한 설정
+    console.log('findCareReports - userRole:', userRole);
+    console.log('findCareReports - currentUserId:', currentUserId);
+
+    if (userRole == 2) {
+      // 건물주(2): 본인의 건물의 작업내역만 조회
+      console.log('건물주 조건 실행됨');
+      sql += ` AND b.user_id = ?`;
+      params.push(currentUserId);
+    } else if (userRole == 1) {
+      // 매니저(1): 본인이 등록한 작업내역만 조회
+      console.log('매니저 조건 실행됨');
+      sql += ` AND cr.user_id = ?`;
+      params.push(currentUserId);
+    } else if (userRole == 0) {
+      console.log('어드민 조건 실행됨 - 모든 작업내역 조회');
+    } else {
+      console.log('userRole이 정의되지 않음:', userRole);
+    }
+    // 어드민(0): 모든 작업내역 조회 (추가 조건 없음)
+
     // 조건이 있을 때만 추가
     if (typeof buildingName != 'undefined' && buildingName) {
       sql += ` AND b.building_name LIKE ?`;
@@ -150,6 +173,8 @@ export const findCareReports = async (
     }
 
     sql += ` GROUP BY cr.care_report_id ORDER BY cr.created_at DESC`;
+
+    console.log('sql', sql);
 
     conn = await pool.getConnection();
     const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(

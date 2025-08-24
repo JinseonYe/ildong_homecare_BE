@@ -126,8 +126,8 @@ export const normalizeToNumberArray = (
 export const getAllCareStatus = async () => {
   try {
     let result = await careReportModel.fetchAllCareStatus();
-    result = formatting.toCamelCase(result);
-    if (result.length > 0) {
+    if (result && result.length > 0) {
+      result = formatting.toCamelCase(result);
       return result;
     } else {
       return false;
@@ -144,7 +144,7 @@ export const getCareReports = async (careReportSearchDto: any) => {
     throw new BadRequest('No search criteria provided');
   }
 
-  const { buildingName, startDate, endDate } = careReportSearchDto;
+  const { buildingName, userId, startDate, endDate } = careReportSearchDto;
 
   let buildingNameWithlikePattern;
 
@@ -153,11 +153,24 @@ export const getCareReports = async (careReportSearchDto: any) => {
     buildingNameWithlikePattern = `%${buildingName}%`;
   }
 
+  let userRole: any;
+
+  if (userId) {
+    console.log('userId', userId);
+
+    userRole = await userModel.findUserRoleByUserId(userId);
+    if (userRole) userRole = userRole[0].user_role;
+  }
+
+  console.log('userRole', userRole);
+
   try {
     const fetchedData = await careReportModel.findCareReports(
+      userRole,
       startDate,
       endDate,
       buildingNameWithlikePattern,
+      userId, // 현재 로그인한 사용자 ID 전달
     );
 
     let result = formatting.toCamelCase(fetchedData, ['file_name', 'file_url']);
@@ -185,6 +198,11 @@ export const getCareReportById = async (careReportId: any) => {
       careReportId,
       targetType,
     );
+
+    if (!fetchedData || fetchedData.length === 0) {
+      return null;
+    }
+
     let result = await formmatFetchedAllCareReport(fetchedData);
 
     if (!result || result.length === 0) {
@@ -341,12 +359,13 @@ export const updateCareReport = async (
       const pushType = 'report';
 
       // users 배열에서 user_id만 추출해서 넘김
-      await pushService.sendPushProcess(
-        users.map((u) => u.user_id),
-        '작업내역 승인',
-        '작업내역이 승인되었습니다.',
-        pushType,
-      );
+      try {
+        await pushService.sendPushProcess(
+          users.map((u) => u.user_id),
+          '작업내역 승인',
+          '작업내역이 승인되었습니다.',
+          pushType,
+        );
       } catch (pushError) {
         // FCM 에러가 발생해도 작업내역 수정은 계속 진행
         console.error('푸시 알림 전송 실패:', pushError);

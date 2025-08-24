@@ -66,6 +66,8 @@ export const collectPushToken = async (targetUserIds: any) => {
     console.log('userId', userId);
 
     const tokens = await deviceModel.findPushTokenInfoByUserId(userId);
+    console.log('tokens', tokens);
+
     if (tokens && tokens.length > 0) {
       allTokens.push(...tokens.map((t: any) => t.push_token || t.pushToken));
     }

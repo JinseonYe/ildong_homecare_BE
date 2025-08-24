@@ -149,3 +149,32 @@ export const findUserByRole = async (userRole: any) => {
     if (conn) conn.release();
   }
 };
+
+// 유저 id 에 따라 유저 권한 조회
+export const findUserRoleByUserId = async (userId: any) => {
+  let conn;
+  const params: any[] = [userId];
+
+  try {
+    conn = await pool.getConnection();
+
+    let sql = `
+      SELECT user_role
+      FROM t_user_profile
+      WHERE user_id =?
+      `;
+
+    conn = await pool.getConnection();
+    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
+      sql,
+      params,
+    );
+    return rows;
+  } catch (err) {
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] findUserRoleByUserId: ${err}`, err);
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+};
