@@ -62,6 +62,9 @@ export const validatePushToken = async (token: string) => {
 export const collectPushToken = async (targetUserIds: any) => {
   let allTokens: string[] = [];
   for (const userId of targetUserIds) {
+    console.log('targetUserIds', targetUserIds);
+    console.log('userId', userId);
+
     const tokens = await deviceModel.findPushTokenInfoByUserId(userId);
     if (tokens && tokens.length > 0) {
       allTokens.push(...tokens.map((t: any) => t.push_token || t.pushToken));

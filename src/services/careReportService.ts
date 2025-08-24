@@ -347,6 +347,11 @@ export const updateCareReport = async (
         '작업내역이 승인되었습니다.',
         pushType,
       );
+      } catch (pushError) {
+        // FCM 에러가 발생해도 작업내역 수정은 계속 진행
+        console.error('푸시 알림 전송 실패:', pushError);
+        // 에러를 던지지 않고 로그만 남김
+      }
     }
 
     await conn.commit(); // 성공 시 커밋!
