@@ -116,6 +116,9 @@ export const loggingMiddleware = (
 
   // 리퀘스트 데이터 로그
   logger.info(`[REQUEST] ${util.inspect(req.body, { depth: null })}`);
+  if (req.files) {
+    logger.info(`[REQUEST FILES] ${util.inspect(req.files, { depth: null })}`);
+  }
 
   res.on('finish', () => {
     const { statusCode } = res;

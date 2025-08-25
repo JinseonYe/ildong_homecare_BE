@@ -6,6 +6,7 @@ import fcmConnection from './services/pushService';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import path from 'path';
+import { logger } from './middlewares/loggingMiddleware';
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
   console.log(`📁 Created directory: ${uploadDir}`);
+  logger.info(`📁 Created directory: ${uploadDir}`);
 }
 
 const BACKEND_HOST = process.env.BACKEND_HOST;
@@ -34,6 +36,7 @@ if (SERVER_TYPE === 'http') {
   // HTTP 서버 실행
   httpServer.listen(BACKEND_PORT, '0.0.0.0', () => {
     console.log(`🚀 HTTP Server running on port ${BACKEND_PORT}!`);
+    logger.info(`🚀 HTTP Server running on port ${BACKEND_PORT}!`);
   });
 } else if (SERVER_TYPE === 'https') {
   try {
@@ -49,10 +52,13 @@ if (SERVER_TYPE === 'http') {
     // HTTPS 서버 실행
     httpsServer.listen(BACKEND_PORT, '0.0.0.0', () => {
       console.log(`🚀 HTTPS Server running on port ${BACKEND_PORT}!`);
+      logger.info(`🚀 HTTPS Server running on port ${BACKEND_PORT}!`);
     });
   } catch (error) {
     console.error('❌ HTTPS 서버 실행 중 에러 발생:', error);
+    logger.error('❌ HTTPS 서버 실행 중 에러 발생:', error);
   }
 } else {
   console.log('올바른 서버가 아닙니다.');
+  logger.info('올바른 서버가 아닙니다.');
 }
