@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import { logger } from '../middlewares/loggingMiddleware';
 
 dotenv.config();
 
@@ -117,6 +118,32 @@ export const uploadToLocal = async (
       const fileNameUrl: { fileName: string; fileUrl: string }[] = [];
 
       for (const file of files) {
+        const filePath = path.join(__dirname, '..', 'uploads', file.filename);
+
+        try {
+          // 파일이 존재하면 쓰기 권한 확인
+          await fs.promises.access(filePath, fs.constants.W_OK);
+          logger.info(`[UPLOAD] 파일 존재 & 쓰기 가능: ${file.filename}`);
+        } catch (err: any) {
+          if (err.code === 'ENOENT') {
+            logger.info(`[UPLOAD] 파일 없음, 새로 생성 가능: ${file.filename}`);
+          } else if (err.code === 'EACCES') {
+            logger.info(`[UPLOAD] 파일 쓰기 권한 없음: ${file.filename}`);
+            return res.status(403).json({
+              success: false,
+              message: `파일 쓰기 권한이 없습니다: ${file.filename}`,
+            });
+          } else {
+            logger.info(
+              `[UPLOAD] 알 수 없는 오류 (${err.code}) 발생: ${file.filename}`,
+            );
+            return res.status(500).json({
+              success: false,
+              message: `파일 처리 중 오류 발생: ${file.filename}`,
+            });
+          }
+        }
+
         fileNameUrl.push({
           fileName: file.filename,
           fileUrl: `/uploads/${file.filename}`,
@@ -129,7 +156,7 @@ export const uploadToLocal = async (
     // 파일이 없으면 그냥 넘어감
     next();
   } catch (error) {
-    console.error(error);
+    logger.error('[UPLOAD] 전체 처리 중 오류:', error);
     res.status(500).json({ success: false, message: '파일 처리 실패' });
   }
 };
