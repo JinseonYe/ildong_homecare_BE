@@ -110,26 +110,26 @@ export const uploadToLocal = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (!req.files || (req.files as Express.Multer.File[]).length === 0) {
-    return res
-      .status(400)
-      .json({ success: false, message: '파일이 없습니다.' });
-  }
-
   try {
-    const fileNameUrl: { fileName: string; fileUrl: string }[] = [];
+    const files = req.files as Express.Multer.File[] | undefined;
 
-    for (const file of req.files as Express.Multer.File[]) {
-      fileNameUrl.push({
-        fileName: file.filename,
-        fileUrl: `/uploads/${file.filename}`,
-      });
+    if (files && files.length > 0) {
+      const fileNameUrl: { fileName: string; fileUrl: string }[] = [];
+
+      for (const file of files) {
+        fileNameUrl.push({
+          fileName: file.filename,
+          fileUrl: `/uploads/${file.filename}`,
+        });
+      }
+
+      req.body.fileNameUrl = fileNameUrl;
     }
 
-    req.body.fileNameUrl = fileNameUrl;
+    // 파일이 없으면 그냥 넘어감
     next();
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: '파일 업로드 실패' });
+    res.status(500).json({ success: false, message: '파일 처리 실패' });
   }
 };

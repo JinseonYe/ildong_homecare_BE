@@ -18,7 +18,7 @@ export const updateUserProfile = async (
   if (Array.isArray(originalFiles)) {
     filePaths = originalFiles.map((originalFile) => originalFile.path);
   } else {
-    throw new NotFoundError('파일이 업로드되지 않았습니다.');
+    console.info('파일이 업로드되지 않았습니다.');
   }
 
   try {

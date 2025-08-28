@@ -31,8 +31,6 @@ export const insertDocumentInfo = async (
     if (error instanceof Error) {
       throw new DatabaseError(`[Method] insertDocumentInfo: ${error}`, error);
     }
-  } finally {
-    if (conn) conn.release();
   }
 };
 

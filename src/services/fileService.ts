@@ -7,27 +7,44 @@ import * as fileModel from '../models/fileModel';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { logger } from '../middlewares/loggingMiddleware';
 
 // 파일 정보 삽입
 export const insertFileInfos = async (
   conn: any,
   files: any,
   targetId: any,
-  tartgetType: any,
+  targetType: any,
   createdAt: any,
 ) => {
   const fileInfos = await extractFileInfo(files);
 
   // 파일 정보 삽입
-  for (const fileInfo of fileInfos) {
-    await fileModel.insertDocumentInfo(
-      conn,
-      targetId,
-      tartgetType,
-      fileInfo,
-      createdAt,
-    ); // 파일 정보
+  const results = await Promise.all(
+    fileInfos.map(async (fileInfo) => {
+      try {
+        await fileModel.insertDocumentInfo(
+          conn,
+          targetId,
+          targetType,
+          fileInfo,
+          createdAt,
+        );
+        return { fileInfo, success: true };
+      } catch (err) {
+        logger.error('파일 삽입 실패:', fileInfo, err);
+        return { fileInfo, success: false, error: err };
+      }
+    }),
+  );
+
+  // 실패한 파일 기록
+  const failedFiles = results.filter((r) => !r.success);
+  if (failedFiles.length > 0) {
+    logger.warn('삽입 실패 파일 있음:', failedFiles);
   }
+
+  return results;
 };
 
 // 파일 정보 삭제

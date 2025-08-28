@@ -311,6 +311,8 @@ export const updateCareReport = async (
   files: any,
 ) => {
   let conn;
+  const pushStatus: { userId: number; success: boolean; error?: string }[] = []; // 푸시 상황
+
   try {
     const updatedAt = new Date();
     conn = await pool.getConnection();
@@ -332,11 +334,7 @@ export const updateCareReport = async (
     }
 
     const targetType = 'carereport';
-    const fileDeletedResult = await fileService.softDeleteDocumentInfo(
-      conn,
-      careReportId,
-      targetType,
-    );
+    await fileService.softDeleteDocumentInfo(conn, careReportId, targetType); // 작업내역 수정 시 기존 파일 삭제
 
     // 파일 정보 수정
     await fileService.insertFileInfos(
@@ -356,29 +354,34 @@ export const updateCareReport = async (
       const managers = await userModel.findUserByRole(managerUserRole);
       const admins = await userModel.findUserByRole(adminUserRole);
 
-      logger.info(`모든 매니저 정보 ${managers}`);
-      logger.info(`모든 어드민 정보 ${admins}`);
-
       // 푸시 알람 전송 정보
       const users = [...(managers || []), ...(admins || [])];
       const pushType = 'report';
+      const targetUserIds = users.map((u) => u.user_id); // users 배열에서 user_id만 추출해서 넘김
 
-      // users 배열에서 user_id만 추출해서 넘김
-      try {
-        const targetUserIds = users.map((u) => u.user_id);
-        logger.info(`푸시를 보낼 userId 내역: ${targetUserIds}`);
-
-        await pushService.sendPushProcess(
-          targetUserIds,
-          '작업내역 승인',
-          '작업내역이 승인되었습니다.',
-          pushType,
-        );
-      } catch (pushError) {
-        // FCM 에러가 발생해도 작업내역 수정은 계속 진행
-        console.error('푸시 알림 전송 실패:', pushError);
-        // 에러를 던지지 않고 로그만 남김
-      }
+      await Promise.all(
+        targetUserIds.map(async (userId) => {
+          try {
+            logger.info(`푸시를 보낼 userId: ${userId}`);
+            await Promise.race([
+              pushService.sendPushProcess(
+                [userId],
+                '작업내역 승인',
+                '작업내역이 승인되었습니다.',
+                pushType,
+              ),
+              new Promise(
+                (_, reject) =>
+                  setTimeout(() => reject(new Error('FCM Timeout')), 10000), // 10초
+              ),
+            ]);
+            pushStatus.push({ userId, success: true });
+          } catch (err: any) {
+            logger.error(`푸시 전송 실패: userId=${userId}`, err.message);
+            pushStatus.push({ userId, success: false, error: err.message });
+          }
+        }),
+      );
     }
 
     await conn.commit(); // 성공 시 커밋!

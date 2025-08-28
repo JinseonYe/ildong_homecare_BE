@@ -62,14 +62,14 @@ export const validatePushToken = async (token: string) => {
 export const collectPushToken = async (targetUserIds: any) => {
   let allTokens: string[] = [];
   for (const userId of targetUserIds) {
-    console.log('targetUserIds', targetUserIds);
-    console.log('userId', userId);
-
-    const tokens = await deviceModel.findPushTokenInfoByUserId(userId);
-    console.log('tokens', tokens);
-
-    if (tokens && tokens.length > 0) {
-      allTokens.push(...tokens.map((t: any) => t.push_token || t.pushToken));
+    try {
+      const tokens = await deviceModel.findPushTokenInfoByUserId(userId);
+      if (tokens && tokens.length > 0) {
+        allTokens.push(...tokens.map((t: any) => t.push_token || t.pushToken));
+      }
+    } catch (err) {
+      console.error(`Failed to collect push token for userId ${userId}:`, err);
+      // 실패해도 넘어감
     }
   }
   // 중복 제거
@@ -172,8 +172,11 @@ export const sendFCMNotification = async (
     }
   }
 
-  logger.info('[FCM SUMMARY] successCount:', successCount);
-  logger.info('[FCM SUMMARY] failureCount:', failureCount);
+  console.log('successCount', successCount);
+  console.log('failureCount', failureCount);
+
+  logger.info(`[FCM SUMMARY] successCount: ${successCount}`);
+  logger.info(`[FCM SUMMARY] failureCount: ${failureCount}`);
 
   return { successCount, failureCount };
 };
@@ -185,16 +188,20 @@ export const sendPushProcess = async (
   body: string,
   pushType: any,
 ) => {
-  const allTokens = await collectPushToken(targetUserIds);
-  logger.info(`푸시를 전송할 토큰들: ${allTokens}`);
+  try {
+    const allTokens = await collectPushToken(targetUserIds);
+    logger.info(`푸시를 전송할 토큰들: ${allTokens}`);
 
-  return await sendFCMNotification(
-    targetUserIds,
-    allTokens,
-    title,
-    body,
-    pushType,
-  );
+    return await sendFCMNotification(
+      targetUserIds,
+      allTokens,
+      title,
+      body,
+      pushType,
+    );
+  } catch (error) {
+    throw new InternalServerError(`${error}`);
+  }
 };
 
 // 알림 조회하기

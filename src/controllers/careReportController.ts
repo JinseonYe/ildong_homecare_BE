@@ -5,6 +5,7 @@ import * as userService from '../services/userService';
 import * as pushService from '../services/pushService';
 import * as deviceModel from '../models/deviceModel';
 import { BadRequest, NotFoundError } from '../errors/httpError';
+import { logger } from '../middlewares/loggingMiddleware';
 
 // 작업내역 등록하기
 export const createCareReport = async (
@@ -18,13 +19,13 @@ export const createCareReport = async (
   const originalFiles = req.files;
   let files: string[] = [];
 
-  if (Array.isArray(originalFiles)) {
-    files = originalFiles.map((originalFile) => originalFile.path);
-  } else {
-    throw new BadRequest('파일이 업로드되지 않았습니다.');
-  }
-
   try {
+    if (Array.isArray(originalFiles)) {
+      files = originalFiles.map((originalFile) => originalFile.path);
+    } else {
+      logger.info('파일이 업로드되지 않았습니다.');
+    }
+
     const result = await careReportService.createCareReport(body, files);
 
     if (result) {
@@ -54,7 +55,7 @@ export const createCareReport = async (
         );
       } catch (pushError) {
         // FCM 에러가 발생해도 작업내역 등록은 계속 진행
-        console.error('푸시 알림 전송 실패:', pushError);
+        logger.error('푸시 알림 전송 실패:', pushError);
         // 에러를 던지지 않고 로그만 남김
       }
 
@@ -170,7 +171,7 @@ export const updateCareReport = async (
     if (Array.isArray(originalFiles)) {
       filePaths = originalFiles.map((originalFile) => originalFile.path);
     } else {
-      throw new NotFoundError('파일이 업로드되지 않았습니다.');
+      logger.info('파일이 업로드되지 않았습니다.');
     }
 
     // 작업내역 ID 가 포함되었는지 확인
