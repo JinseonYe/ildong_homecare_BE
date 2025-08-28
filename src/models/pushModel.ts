@@ -164,3 +164,23 @@ export const markOlderNotificationsAsRead = async (userId: any) => {
     if (conn) conn.release();
   }
 };
+
+// 유효하지 않은 토큰 여러 개 삭제
+export const deleteInvalidTokens = async (tokens: string[]) => {
+  if (tokens.length === 0) return; // 삭제할 토큰 없으면 바로 종료
+
+  const conn = await pool.getConnection();
+  try {
+    const placeholders = tokens.map(() => '?').join(', ');
+    await conn.query(
+      `DELETE FROM t_user_device WHERE push_token IN (${placeholders})`,
+      tokens,
+    );
+  } catch (err) {
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] deleteInvalidTokens: ${err}`, err);
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+};

@@ -14,6 +14,7 @@ import * as userModel from '../models/userModel';
 import * as deviceModel from '../models/deviceModel';
 import * as pushService from '../services/pushService';
 import * as fileService from '../services/fileService';
+import { logger } from '../middlewares/loggingMiddleware';
 
 // 작업내역 등록하기
 export const createCareReport = async (careReportInfo: any, files: any) => {
@@ -347,6 +348,7 @@ export const updateCareReport = async (
     );
 
     if (careStatusId == 3) {
+      logger.info(`작업 내역 승인 시작`);
       // careStatusId가 3(승인)일 때 userRole 1(매니저), 0(관리자)에게 푸시
       // userRole 1: 매니저, userRole 0: 관리자
       const managerUserRole = 1;
@@ -354,14 +356,20 @@ export const updateCareReport = async (
       const managers = await userModel.findUserByRole(managerUserRole);
       const admins = await userModel.findUserByRole(adminUserRole);
 
+      logger.info(`모든 매니저 정보 ${managers}`);
+      logger.info(`모든 어드민 정보 ${admins}`);
+
       // 푸시 알람 전송 정보
       const users = [...(managers || []), ...(admins || [])];
       const pushType = 'report';
 
       // users 배열에서 user_id만 추출해서 넘김
       try {
+        const targetUserIds = users.map((u) => u.user_id);
+        logger.info(`푸시를 보낼 userId 내역: ${targetUserIds}`);
+
         await pushService.sendPushProcess(
-          users.map((u) => u.user_id),
+          targetUserIds,
           '작업내역 승인',
           '작업내역이 승인되었습니다.',
           pushType,

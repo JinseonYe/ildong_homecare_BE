@@ -11,6 +11,7 @@ import {
   InternalServerError,
 } from '../errors/httpError';
 import fs from 'fs';
+import { logger } from '../middlewares/loggingMiddleware';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -87,6 +88,7 @@ export const sendFCMNotification = async (
   let successCount = 0;
   let failureCount = 0;
   let validTokens: string[] = [];
+  const invalidTokens: string[] = [];
 
   // 토큰 유효성 검증
   for (const token of tokens) {
@@ -94,9 +96,18 @@ export const sendFCMNotification = async (
     if (isValid) {
       validTokens.push(token);
     } else {
-      console.log(`Invalid token: ${token}`);
-      // 유효하지 않은 토큰은 DB에서 삭제하는 로직을 추가할 수 있습니다
-      // await fcmModel.deleteInvalidToken(token);
+      invalidTokens.push(token);
+      logger.info(`Invalid token: ${token}`);
+    }
+  }
+
+  // 유효하지 않은 토큰 한 번에 DB에서 삭제
+  if (invalidTokens.length > 0) {
+    try {
+      await pushModel.deleteInvalidTokens(invalidTokens);
+    } catch (error) {
+      logger.error(`Failed to delete invalid tokens: ${error}`);
+      // 에러 발생해도 다음 코드 진행됨
     }
   }
 
@@ -121,45 +132,48 @@ export const sendFCMNotification = async (
         },
       },
     };
+    try {
+      const response = await getMessaging().sendEachForMulticast(message);
+      successCount += response.successCount;
+      failureCount += response.failureCount;
 
-    const response = await getMessaging().sendEachForMulticast(message);
-    successCount += response.successCount;
-    failureCount += response.failureCount;
-
-    // 상세 로그 추가: 각 토큰별 성공/실패 및 에러 메시지
-    response.responses.forEach((resp, idx) => {
-      const token = chunk[idx];
-      if (resp.success) {
-        console.log(`[FCM SUCCESS] token: ${token}`);
-      } else {
-        console.error(
-          `[FCM FAIL] token: ${token}, error:`,
-          resp.error?.message || resp.error,
-        );
-        throw new Error(
-          `[FCM FAIL] token: ${token}, error: ${
-            resp.error?.message || resp.error
-          }`,
-        );
-      }
-    });
+      // 상세 로그 추가: 각 토큰별 성공/실패 및 에러 메시지
+      response.responses.forEach((resp, idx) => {
+        const token = chunk[idx];
+        if (resp.success) {
+          logger.info(`[FCM SUCCESS] token: ${token}`);
+        } else {
+          logger.error(
+            `[FCM FAIL] token: ${token}, error: ${resp.error?.message}`,
+          );
+          // throw하지 않고 그냥 실패 카운트에 포함
+        }
+      });
+    } catch (error) {
+      logger.error(`FCM multicast failed for chunk: ${error}`);
+      failureCount += chunk.length; // chunk 전체를 실패로 처리
+    }
   }
 
   // 푸시 로그 저장 (userId별로)
   for (const userId of targetUserIds) {
-    await pushModel.insertNotificationLog(
-      userId,
-      title,
-      body,
-      JSON.stringify(validTokens),
-      successCount,
-      failureCount,
-      pushType,
-    );
+    try {
+      await pushModel.insertNotificationLog(
+        userId,
+        title,
+        body,
+        JSON.stringify(validTokens),
+        successCount,
+        failureCount,
+        pushType,
+      );
+    } catch (error) {
+      logger.error(`Failed to insert push log for user ${userId}: ${error}`);
+    }
   }
 
-  console.log('[FCM SUMMARY] successCount:', successCount);
-  console.log('[FCM SUMMARY] failureCount:', failureCount);
+  logger.info('[FCM SUMMARY] successCount:', successCount);
+  logger.info('[FCM SUMMARY] failureCount:', failureCount);
 
   return { successCount, failureCount };
 };
@@ -172,6 +186,8 @@ export const sendPushProcess = async (
   pushType: any,
 ) => {
   const allTokens = await collectPushToken(targetUserIds);
+  logger.info(`푸시를 전송할 토큰들: ${allTokens}`);
+
   return await sendFCMNotification(
     targetUserIds,
     allTokens,
