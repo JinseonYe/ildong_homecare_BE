@@ -10,7 +10,6 @@ import {
   BadRequest,
   InternalServerError,
 } from '../errors/httpError';
-
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -185,6 +184,7 @@ export const sendPushProcess = async (
 // 알림 조회하기
 export const getPushList = async (userId: any) => {
   try {
+    await pushModel.markOlderNotificationsAsRead(userId); // 최근 100개 제외하고는 읽음처리
     const fetchedData = await pushModel.fetchPushListByUserId(userId);
     let result = formatting.toCamelCase(fetchedData);
     if (result) {
