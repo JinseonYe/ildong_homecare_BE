@@ -87,7 +87,7 @@ export const sendFCMNotification = async (
 ) => {
   let successCount = 0;
   let failureCount = 0;
-  let validTokens: string[] = [];
+  const validTokens: string[] = [];
   const invalidTokens: string[] = [];
 
   // 토큰 유효성 검증
@@ -101,20 +101,11 @@ export const sendFCMNotification = async (
     }
   }
 
-  // 유효하지 않은 토큰 한 번에 DB에서 삭제
-  if (invalidTokens.length > 0) {
-    try {
-      await pushModel.deleteInvalidTokens(invalidTokens);
-    } catch (error) {
-      logger.error(`Failed to delete invalid tokens: ${error}`);
-      // 에러 발생해도 다음 코드 진행됨
-    }
-  }
-
   if (validTokens.length === 0) {
     throw new NotFoundError('No valid FCM tokens found');
   }
 
+  // 토큰 chunk로 나누어 전송
   const tokenChunks = chunkArray(validTokens, MAX_FCM_LIMIT);
 
   for (const chunk of tokenChunks) {
@@ -137,12 +128,13 @@ export const sendFCMNotification = async (
       successCount += response.successCount;
       failureCount += response.failureCount;
 
-      // 상세 로그 추가: 각 토큰별 성공/실패 및 에러 메시지
+      // 각 토큰별 성공/실패 로깅
       response.responses.forEach((resp, idx) => {
         const token = chunk[idx];
         if (resp.success) {
           logger.info(`[FCM SUCCESS] token: ${token}`);
         } else {
+          invalidTokens.push(token);
           logger.error(
             `[FCM FAIL] token: ${token}, error: ${resp.error?.message}`,
           );
@@ -152,6 +144,16 @@ export const sendFCMNotification = async (
     } catch (error) {
       logger.error(`FCM multicast failed for chunk: ${error}`);
       failureCount += chunk.length; // chunk 전체를 실패로 처리
+    }
+  }
+
+  // 유효하지 않은 토큰 한 번에 DB에서 삭제
+  if (invalidTokens.length > 0) {
+    try {
+      console.log('invalidTokens', invalidTokens);
+      await pushModel.deleteInvalidTokens(invalidTokens);
+    } catch (error) {
+      logger.error(`Failed to delete invalid tokens: ${error}`);
     }
   }
 
@@ -175,6 +177,9 @@ export const sendFCMNotification = async (
   console.log('successCount', successCount);
   console.log('failureCount', failureCount);
 
+  logger.info(
+    `Invalid tokens to delete: ${invalidTokens} | Total: ${invalidTokens.length}`,
+  );
   logger.info(`[FCM SUMMARY] successCount: ${successCount}`);
   logger.info(`[FCM SUMMARY] failureCount: ${failureCount}`);
 

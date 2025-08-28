@@ -38,7 +38,7 @@ export const createCareReport = async (
       const userName = userInfo.user_name; // 건물명
 
       // 푸시 알림 시 필요한 정보들
-      const title = `작업자: <${userName}> 님께서 건물명: <${buildingName}> 에 대한 작업내역이 등록하였습니다.`;
+      const title = `작업자: <${userName}> 님께서 건물명: <${buildingName}> 에 대한 작업내역을 등록하였습니다.`;
       const content = '테스트중임';
 
       // 푸시 대상 userId 배열
