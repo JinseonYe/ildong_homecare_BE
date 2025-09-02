@@ -88,18 +88,27 @@ export const getUsers = async (
     // 서비스 레이어 호출
     const result = await userService.getUsers(convertedDto);
 
-    // 성공 응답
-    return res.status(200).json({
-      success: true,
-      message: '조회 성공',
-      data: result.users,
-      pagination: {
-        totalCount: result.totalCount,
-        page: result.page,
-        pageSize: result.pageSize,
-        totalPages: Math.ceil(result.totalCount / result.pageSize),
-      },
-    });
+    if (result) {
+      // 성공 응답
+      return res.status(200).json({
+        success: true,
+        message: '조회 성공',
+        data: result.users,
+        pagination: {
+          totalCount: result.totalCount,
+          page: result.page,
+          pageSize: result.pageSize,
+          totalPages: Math.ceil(result.totalCount / result.pageSize),
+        },
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: '조회 결과가 없습니다.',
+        data: [],
+        pagination: null,
+      });
+    }
   } catch (error) {
     next(error);
   }
@@ -126,6 +135,41 @@ export const getUserById = async (
         data: result,
       });
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 회원 탈퇴 (관리자 또는 로그인 사용자 기준)
+export const deleteUserById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const { userId } = req.params;
+
+  try {
+    // userId 유효성 검사
+    if (!userId || isNaN(Number(userId))) {
+      return res.status(400).json({
+        success: false,
+        message: '유효한 userId가 필요합니다.',
+      });
+    }
+
+    const deleted = await userService.deleteUserById(Number(userId));
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: '삭제할 사용자를 찾을 수 없습니다.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: '회원 탈퇴가 완료되었습니다.',
+    });
   } catch (error) {
     next(error);
   }

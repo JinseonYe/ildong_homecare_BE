@@ -169,3 +169,19 @@ export const getAdmins = async () => {
   }
   return admins;
 };
+
+// 회원 탈퇴
+export const deleteUserById = async (userId: any) => {
+  // DTO 유효성 검사
+  if (!userId) {
+    throw new BadRequest('No search criteria provided');
+  }
+
+  try {
+    const result = await userModel.deleteUserById(userId);
+
+    return result;
+  } catch (error: unknown) {
+    throw new InternalServerError(`${error}`);
+  }
+};

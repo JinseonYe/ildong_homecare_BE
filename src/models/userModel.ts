@@ -1,5 +1,5 @@
 import { DatabaseError } from '../errors/databaseError';
-import { FieldPacket, RowDataPacket } from 'mysql2';
+import { FieldPacket, ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
 import { UserSearchDto } from '../interfaces/userInterface';
 
@@ -173,6 +173,38 @@ export const findUserRoleByUserId = async (userId: any) => {
   } catch (err) {
     if (err instanceof Error) {
       throw new DatabaseError(`[Method] findUserRoleByUserId: ${err}`, err);
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+};
+
+// 회원 탈퇴
+export const deleteUserById = async (userId: any) => {
+  let conn;
+  const deleteStatus = 1;
+  const now = new Date();
+  const params = [deleteStatus, now, userId];
+
+  try {
+    const sql = `
+      UPDATE t_user
+      SET is_deleted = ?, deleted_at = ?
+      WHERE user_id = ? 
+      `;
+
+    conn = await pool.getConnection();
+
+    const [result]: [ResultSetHeader, unknown] = await conn.query(sql, params);
+
+    if (result.affectedRows === 0) {
+      throw new Error('업데이트된 데이터가 없습니다.');
+    }
+
+    return result.affectedRows > 0;
+  } catch (err) {
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] deleteUserById: ${err}`, err);
     }
   } finally {
     if (conn) conn.release();

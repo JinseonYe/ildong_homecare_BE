@@ -12,5 +12,6 @@ router.patch(
   uploadMiddleware.uploadToLocal,
   userController.updateUserProfile,
 );
+router.delete('/api/user/:userId', userController.deleteUserById);
 
 export default router;
