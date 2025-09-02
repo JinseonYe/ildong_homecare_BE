@@ -5,6 +5,7 @@ import careReportRoute from './routes/careReportRoute';
 import authRoute from './routes/authRoute';
 import pushRoute from './routes/pushRoute';
 import userRoute from './routes/userRoute';
+import termsRoute from './routes/termsRoute';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { errorMiddleware } from './middlewares/errorMiddleware';
@@ -30,6 +31,7 @@ app.use('/', careReportRoute);
 app.use('/', authRoute);
 app.use('/', pushRoute);
 app.use('/', userRoute);
+app.use('/', termsRoute);
 
 app.use(errorMiddleware); // 예외처리 미들웨어 (가장 마지막에 위치)
 
