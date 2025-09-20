@@ -48,8 +48,8 @@ export const createBuilding = async (buildingInfo: any, files: any) => {
 export const getAllBuilding = async () => {
   try {
     let result = await buildingModel.fetchAllBuildingInfo();
-    result = formatting.toCamelCase(result);
-    if (result.length > 0) {
+    if (result && result.length > 0) {
+      result = formatting.toCamelCase(result);
       return result;
     } else {
       return false;
@@ -63,8 +63,8 @@ export const getAllBuilding = async () => {
 export const fetchBuildingById = async (buildingId: any) => {
   try {
     let result = await buildingModel.fetchBuildingById(buildingId);
-    result = formatting.toCamelCase(result);
-    if (result.length > 0) {
+    if (result && result.length > 0) {
+      result = formatting.toCamelCase(result);
       return result;
     } else {
       return false;
@@ -132,9 +132,9 @@ export const deleteBuilding = async (buildingId: any) => {
   try {
     conn = await pool.getConnection();
     await conn.beginTransaction(); // 트랜잭션 시작
-    let result: any = await buildingModel.deleteBuilding(buildingId);
+    let result = await buildingModel.deleteBuilding(conn, buildingId);
 
-    if (result.affectedRows === 0) {
+    if (!result) {
       throw new NotFoundError('건물 정보 삭제 실패');
     }
 

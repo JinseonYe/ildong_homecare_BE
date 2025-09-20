@@ -131,8 +131,7 @@ export const updateBuilding = async (
 };
 
 // 건물 삭제
-export const deleteBuilding = async (buildingId: any) => {
-  let conn;
+export const deleteBuilding = async (conn: any, buildingId: any) => {
   const time = new Date();
   const deleteStatus = 1;
 
@@ -141,7 +140,6 @@ export const deleteBuilding = async (buildingId: any) => {
     SET is_deleted =?, deleted_at =? 
     WHERE building_id = ?`;
 
-    conn = await pool.getConnection();
     const [result]: any = await conn.query(sql, [
       deleteStatus,
       time,
@@ -153,7 +151,5 @@ export const deleteBuilding = async (buildingId: any) => {
     if (error instanceof Error) {
       throw new DatabaseError(`[Method] deleteBuilding: ${error}`, error);
     }
-  } finally {
-    if (conn) conn.release();
   }
 };

@@ -99,7 +99,7 @@ export const insertRefreshToken = async (
     const sql =
       'INSERT INTO t_token_user (refresh_token, user_id, created_at) VALUES (?, ?, ?)';
     conn = await pool.getConnection();
-    conn.query(sql, [refreshToken, userId, currentTime]);
+    await conn.query(sql, [refreshToken, userId, currentTime]);
   } catch (error) {
     if (error instanceof Error) {
       throw new DatabaseError(`[Method] insertRefreshToken: ${error}`, error);
