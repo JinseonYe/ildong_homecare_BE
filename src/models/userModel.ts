@@ -89,8 +89,6 @@ export const findUserById = async (userId: any) => {
   const params: any[] = [deleteStatus, deleteStatus, userId];
 
   try {
-    conn = await pool.getConnection();
-
     let sql = `
         SELECT u.user_id, prof.user_email, prof.user_name, prof.phone_number, 
         prof.user_role, prof.is_approved, prof.activate_alarm, fu.file_name, fu.file_url
@@ -125,8 +123,6 @@ export const findUserByRole = async (userRole: any) => {
   const params: any[] = [deleteStatus, userRole];
 
   try {
-    conn = await pool.getConnection();
-
     let sql = `
       SELECT up.user_id, up.user_email, up.user_name, up.phone_number, up.user_role, up.is_approved
       FROM t_user_profile AS up
@@ -156,8 +152,6 @@ export const findUserRoleByUserId = async (userId: any) => {
   const params: any[] = [userId];
 
   try {
-    conn = await pool.getConnection();
-
     let sql = `
       SELECT user_role
       FROM t_user_profile
