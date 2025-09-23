@@ -46,6 +46,8 @@ export const insertNotificationLog = async (
         error,
       );
     }
+  } finally {
+    if (conn) conn.release();
   }
 };
 

@@ -56,7 +56,5 @@ export const softDeleteDocumentInfo = async (
         error,
       );
     }
-  } finally {
-    if (conn) conn.release();
   }
 };

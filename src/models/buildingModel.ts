@@ -21,8 +21,6 @@ export const insertBuildingInfo = async (conn: any, buildingInfo: any) => {
     if (err instanceof Error) {
       throw new DatabaseError(`[Method] insertBuildingInfo: ${err}`, err);
     }
-  } finally {
-    if (conn) conn.release();
   }
 };
 
@@ -125,8 +123,6 @@ export const updateBuilding = async (
     if (error instanceof Error) {
       throw new DatabaseError(`[Method] updateBuilding: ${error}`, error);
     }
-  } finally {
-    if (conn) conn.release();
   }
 };
 

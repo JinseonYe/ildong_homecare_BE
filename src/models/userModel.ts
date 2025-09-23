@@ -29,8 +29,6 @@ export const updateUserProfile = async (
     if (error instanceof Error) {
       throw new DatabaseError(`[Method] updateUserProfile: ${error}`, error);
     }
-  } finally {
-    if (conn) conn.release(); // DB 연결 해제
   }
 };
 

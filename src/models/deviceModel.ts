@@ -26,6 +26,8 @@ export const insertDeviceInfo = async (userId: any, deviceInfo: any) => {
     if (error instanceof Error) {
       throw new DatabaseError(`[Method] insertDeviceInfo: ${error}`, error);
     }
+  } finally {
+    if (conn) conn.release();
   }
 };
 
@@ -53,6 +55,8 @@ export const findDeviceInfoByUserId = async (userId: any, deviceUUID: any) => {
         error,
       );
     }
+  } finally {
+    if (conn) conn.release();
   }
 };
 
@@ -79,6 +83,8 @@ export const findPushTokenInfoByUserId = async (userId: any) => {
         error,
       );
     }
+  } finally {
+    if (conn) conn.release();
   }
 };
 
@@ -104,5 +110,7 @@ export const updateDeviceInfo = async (userId: any, deviceInfo: any) => {
     if (error instanceof Error) {
       throw new DatabaseError(`[Method] updateDeviceInfo: ${error}`, error);
     }
+  } finally {
+    if (conn) conn.release();
   }
 };
