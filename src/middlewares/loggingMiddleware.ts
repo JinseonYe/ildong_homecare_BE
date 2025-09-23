@@ -115,7 +115,21 @@ export const loggingMiddleware = (
   logger.info(`[${method}] ${originalUrl}`);
 
   // 리퀘스트 데이터 로그
-  logger.info(`[REQUEST] ${util.inspect(req.body, { depth: null })}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    logger.info(
+      `[REQUEST] ${JSON.stringify({
+        body: req.body,
+        files: Array.isArray(req.files)
+          ? req.files.map((f) => ({
+              originalname: f.originalname,
+              size: f.size,
+              mimetype: f.mimetype,
+            }))
+          : undefined,
+      })}`,
+    );
+  }
+
   if (req.files) {
     logger.info(`[REQUEST FILES] ${util.inspect(req.files, { depth: null })}`);
   }

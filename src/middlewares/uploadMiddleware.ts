@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { logger } from '../middlewares/loggingMiddleware';
+import util from 'util';
 
 dotenv.config();
 
@@ -113,6 +114,20 @@ export const uploadToLocal = async (
 ) => {
   try {
     const files = req.files as Express.Multer.File[] | undefined;
+
+    // 리퀘스트 데이터 로그
+    logger.info(
+      `[REQUEST] ${JSON.stringify({
+        body: req.body,
+        files: Array.isArray(req.files)
+          ? req.files.map((f) => ({
+              originalname: f.originalname,
+              size: f.size,
+              mimetype: f.mimetype,
+            }))
+          : undefined,
+      })}`,
+    );
 
     if (files && files.length > 0) {
       const fileNameUrl: { fileName: string; fileUrl: string }[] = [];
