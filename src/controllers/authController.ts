@@ -4,6 +4,7 @@ import * as authModel from '../models/authModel';
 import * as authMiddleware from '../middlewares/authMiddleware';
 import * as deviceService from '../services/deviceService';
 import * as userModel from '../models/userModel';
+import { logger } from '../middlewares/loggingMiddleware';
 
 // 회원가입 API
 export const register = async (
@@ -18,7 +19,7 @@ export const register = async (
   if (Array.isArray(originalFiles)) {
     files = originalFiles.map((originalFile) => originalFile.path);
   } else {
-    console.log('파일이 업로드되지 않았습니다.');
+    logger.info('파일이 업로드되지 않았습니다.');
   }
 
   try {

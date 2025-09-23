@@ -129,6 +129,12 @@ export const uploadToLocal = async (
       })}`,
     );
 
+    if (req.files) {
+      logger.info(
+        `[REQUEST FILES] ${util.inspect(req.files, { depth: null })}`,
+      );
+    }
+
     if (files && files.length > 0) {
       const fileNameUrl: { fileName: string; fileUrl: string }[] = [];
 
@@ -171,7 +177,7 @@ export const uploadToLocal = async (
     // 파일이 없으면 그냥 넘어감
     next();
   } catch (error) {
-    logger.error('[UPLOAD] 전체 처리 중 오류:', error);
+    logger.error(`[UPLOAD] 전체 처리 중 오류: ${error}`);
     res.status(500).json({ success: false, message: '파일 처리 실패' });
   }
 };

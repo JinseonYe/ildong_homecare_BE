@@ -55,7 +55,7 @@ export const createCareReport = async (
         );
       } catch (pushError) {
         // FCM 에러가 발생해도 작업내역 등록은 계속 진행
-        logger.error('푸시 알림 전송 실패:', pushError);
+        logger.error(`푸시 알림 전송 실패: ${pushError}`);
         // 에러를 던지지 않고 로그만 남김
       }
 

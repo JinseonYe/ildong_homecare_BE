@@ -32,7 +32,7 @@ export const insertFileInfos = async (
         );
         return { fileInfo, success: true };
       } catch (err) {
-        logger.error('파일 삽입 실패:', fileInfo, err);
+        logger.error(`파일 삽입 실패: ${fileInfo}, ${err}`);
         return { fileInfo, success: false, error: err };
       }
     }),
@@ -41,7 +41,7 @@ export const insertFileInfos = async (
   // 실패한 파일 기록
   const failedFiles = results.filter((r) => !r.success);
   if (failedFiles.length > 0) {
-    logger.warn('삽입 실패 파일 있음:', failedFiles);
+    logger.warn(`삽입 실패 파일 있음: , ${failedFiles}`);
   }
 
   return results;

@@ -1,6 +1,7 @@
 import { DatabaseError } from '../errors/databaseError';
 import { FieldPacket, RowDataPacket, ResultSetHeader } from 'mysql2';
 import { pool } from '../config/db';
+import { logger } from '../middlewares/loggingMiddleware';
 
 // 작업 내역 등록
 export const insertCareReport = async (conn: any, careReportInfo: any) => {
@@ -136,23 +137,23 @@ export const findCareReports = async (
       WHERE cr.is_deleted = ?`;
 
     // userRole에 따른 조회 권한 설정
-    console.log('findCareReports - userRole:', userRole);
-    console.log('findCareReports - currentUserId:', currentUserId);
+    logger.info(`findCareReports - userRole: ${userRole}`);
+    logger.info(`findCareReports - currentUserId: ${currentUserId}`);
 
     if (userRole == 2) {
       // 건물주(2): 본인의 건물의 작업내역만 조회
-      console.log('건물주 조건 실행됨');
+      logger.info('건물주 조건 실행됨');
       sql += ` AND b.user_id = ?`;
       params.push(currentUserId);
     } else if (userRole == 1) {
       // 매니저(1): 본인이 등록한 작업내역만 조회
-      console.log('매니저 조건 실행됨');
+      logger.info('매니저 조건 실행됨');
       sql += ` AND cr.user_id = ?`;
       params.push(currentUserId);
     } else if (userRole == 0) {
-      console.log('어드민 조건 실행됨 - 모든 작업내역 조회');
+      logger.info('어드민 조건 실행됨 - 모든 작업내역 조회');
     } else {
-      console.log('userRole이 정의되지 않음:', userRole);
+      logger.info(`userRole이 정의되지 않음: ${userRole}`);
     }
     // 어드민(0): 모든 작업내역 조회 (추가 조건 없음)
 
@@ -173,8 +174,6 @@ export const findCareReports = async (
     }
 
     sql += ` GROUP BY cr.care_report_id ORDER BY cr.created_at DESC`;
-
-    console.log('sql', sql);
 
     conn = await pool.getConnection();
     const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(

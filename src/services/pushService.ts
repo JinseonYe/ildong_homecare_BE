@@ -31,9 +31,9 @@ const connect = () => {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
-      console.log('FCM Initialized Successfully');
+      logger.info('FCM Initialized Successfully');
     } else {
-      console.log('FCM Already Initialized');
+      logger.info('FCM Already Initialized');
     }
   } catch (error) {
     throw new InternalServerError(`${error}`);
@@ -150,7 +150,7 @@ export const sendFCMNotification = async (
   // 유효하지 않은 토큰 한 번에 DB에서 삭제
   if (invalidTokens.length > 0) {
     try {
-      console.log('invalidTokens', invalidTokens);
+      logger.info(`invalidTokens ${invalidTokens}`);
       await pushModel.deleteInvalidTokens(invalidTokens);
     } catch (error) {
       logger.error(`Failed to delete invalid tokens: ${error}`);

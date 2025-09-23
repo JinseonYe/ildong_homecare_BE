@@ -3,6 +3,7 @@ import * as userService from '../services/userService';
 import { UserSearchDto } from '../interfaces/userInterface';
 import * as formatting from '../utils/formatting';
 import { NotFoundError } from '../errors/httpError';
+import { logger } from '../middlewares/loggingMiddleware';
 
 // 유저 프로필 업데이트
 export const updateUserProfile = async (
@@ -18,7 +19,7 @@ export const updateUserProfile = async (
   if (Array.isArray(originalFiles)) {
     filePaths = originalFiles.map((originalFile) => originalFile.path);
   } else {
-    console.info('파일이 업로드되지 않았습니다.');
+    logger.info('파일이 업로드되지 않았습니다.');
   }
 
   try {

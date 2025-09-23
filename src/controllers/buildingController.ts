@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as buildingService from '../services/buildingService';
+import { logger } from '../middlewares/loggingMiddleware';
 
 // 건물 등록하기
 export const createBuilding = async (
@@ -14,7 +15,7 @@ export const createBuilding = async (
   if (Array.isArray(originalFiles)) {
     files = originalFiles.map((originalFile) => originalFile.path);
   } else {
-    console.log('파일이 업로드되지 않았습니다.');
+    logger.info('파일이 업로드되지 않았습니다.');
   }
 
   try {
@@ -67,7 +68,7 @@ export const updateBuilding = async (
   if (Array.isArray(originalFiles)) {
     filePaths = originalFiles.map((originalFile) => originalFile.path);
   } else {
-    console.log('파일이 업로드되지 않았습니다.');
+    logger.info('파일이 업로드되지 않았습니다.');
   }
 
   try {

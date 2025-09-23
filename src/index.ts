@@ -55,10 +55,10 @@ if (SERVER_TYPE === 'http') {
       logger.info(`🚀 HTTPS Server running on port ${BACKEND_PORT}!`);
     });
   } catch (error) {
-    console.error('❌ HTTPS 서버 실행 중 에러 발생:', error);
-    logger.error('❌ HTTPS 서버 실행 중 에러 발생:', error);
+    console.error(`❌ HTTPS 서버 실행 중 에러 발생: ${error}`);
+    logger.error(`❌ HTTPS 서버 실행 중 에러 발생: ${error}`);
   }
 } else {
-  console.log('올바른 서버가 아닙니다.');
-  logger.info('올바른 서버가 아닙니다.');
+  console.log(`올바른 서버가 아닙니다.`);
+  logger.info(`올바른 서버가 아닙니다.`);
 }

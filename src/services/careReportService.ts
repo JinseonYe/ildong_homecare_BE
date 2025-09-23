@@ -157,13 +157,9 @@ export const getCareReports = async (careReportSearchDto: any) => {
   let userRole: any;
 
   if (userId) {
-    console.log('userId', userId);
-
     userRole = await userModel.findUserRoleByUserId(userId);
     if (userRole) userRole = userRole[0].user_role;
   }
-
-  console.log('userRole', userRole);
 
   try {
     const fetchedData = await careReportModel.findCareReports(
@@ -291,7 +287,7 @@ export const checkIsBuildingOwner = async (
     if (buildingOwnerId == userId) {
       await updateCareStatusByReportId(careReportId); // 비동기 처리에 대해 await 사용
     } else {
-      console.log('사용자는 건물주가 아닙니다.');
+      logger.info('사용자는 건물주가 아닙니다.');
     }
   } catch (err) {
     throw new InternalServerError(`${err}`);
