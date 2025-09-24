@@ -99,7 +99,10 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    // 띄어쓰기만 _ 로 변경
+    const cleanName = file.originalname.replace(/\s+/g, '_');
+
+    cb(null, `${Date.now()}-${cleanName}`);
   },
 });
 
