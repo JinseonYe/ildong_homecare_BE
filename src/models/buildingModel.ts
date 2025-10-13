@@ -181,3 +181,46 @@ export const fetchBuildingByCareReportId = async (careReportId: any) => {
     if (conn) conn.release();
   }
 };
+
+// 건물 전체 조회 하기
+export const findBuildingsByKeywords = async (
+  searchConditions: string[], // ['building_name LIKE ?', 'user_name LIKE ?']
+  params: any[],
+) => {
+  const conn = await pool.getConnection();
+  const deleteStatus = 0;
+
+  try {
+    let whereClause = `WHERE b.is_deleted = ?`;
+    const queryParams = [deleteStatus, deleteStatus];
+
+    // 검색 조건이 있으면 AND (...) 형태로 붙이기
+    if (searchConditions.length > 0) {
+      whereClause += ` AND (${searchConditions.join(' OR ')})`;
+      queryParams.push(...params);
+    }
+
+    const sql = `
+      SELECT 
+        b.building_id, up.user_id, up.user_name, up.user_email, up.phone_number, 
+        b.building_name, b.address, fu.file_name, fu.file_url, b.created_at
+      FROM t_building AS b
+      LEFT JOIN t_user_profile AS up ON b.user_id = up.user_id
+      LEFT JOIN t_file_upload AS fu 
+        ON b.building_id = fu.target_id
+        AND fu.target_type = 'building'
+        AND fu.is_deleted = ?
+      ${whereClause}
+      ORDER BY b.building_id DESC
+    `;
+
+    const [rows] = await conn.query(sql, queryParams);
+    return rows;
+  } catch (err) {
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] findBuildingsByKeywords: ${err}`, err);
+    }
+  } finally {
+    conn.release();
+  }
+};

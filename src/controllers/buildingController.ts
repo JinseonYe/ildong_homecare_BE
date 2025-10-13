@@ -53,6 +53,43 @@ export const getAllBuilding = async (
   }
 };
 
+// 건물 전체 조회하기
+export const getBuildingsByKeyword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const fieldsQuery = req.query.fields ? String(req.query.fields) : '';
+  const fieldsArray = fieldsQuery
+    .split(',')
+    .map((f) => f.trim()) // 공백 제거
+    .filter((f) => f !== ''); // 빈 문자열 제거
+
+  const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
+
+  // DTO 생성
+  const buildingSearchDto = {
+    fields: fieldsArray.length > 0 ? fieldsArray : undefined,
+    keyword,
+  };
+
+  try {
+    const result = await buildingService.getBuildingsByKeyword(
+      buildingSearchDto,
+    );
+
+    if (result) {
+      return res.status(200).send({
+        success: true,
+        message: '건물 전체 조회를 성공했습니다.',
+        data: result,
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 // 건물 정보 업데이트하기
 export const updateBuilding = async (
   req: Request,

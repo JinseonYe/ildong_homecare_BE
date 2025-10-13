@@ -11,6 +11,7 @@ router.post(
   buildingController.createBuilding,
 );
 router.get('/api/building', buildingController.getAllBuilding);
+router.get('/api/buildings/search', buildingController.getBuildingsByKeyword);
 router.patch(
   '/api/building/:buildingId',
   uploadMiddleware.uploadToLocalMiddleware,

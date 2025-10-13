@@ -154,3 +154,41 @@ export const deleteBuilding = async (buildingId: any) => {
     if (conn) conn.release();
   }
 };
+
+// 건물 전체 조회 하기
+export const getBuildingsByKeyword = async (buildingDto: any) => {
+  const { fields = [], keyword } = buildingDto || {};
+
+  // 프론트 필드 → 실제 컬럼 매핑
+  const fieldMap: Record<string, string> = {
+    building_name: 'b.building_name',
+    user_name: 'up.user_name',
+    address: 'b.address',
+  };
+
+  // 유효한 필드만 남기고 실제 컬럼으로 변환
+  const searchFields = fields
+    .map((f: string) => f.trim())
+    .filter((f: any) => fieldMap[f])
+    .map((f: any) => fieldMap[f]); // SQL 컬럼명으로 변환
+
+  const searchConditions: string[] = [];
+  const params: any[] = [];
+
+  if (searchFields.length > 0 && keyword) {
+    searchFields.forEach((f: any) => {
+      searchConditions.push(`${f} LIKE ?`);
+      params.push(`%${keyword}%`);
+    });
+  }
+
+  try {
+    const result = await buildingModel.findBuildingsByKeywords(
+      searchConditions,
+      params,
+    );
+    return formatting.toCamelCase(result);
+  } catch (error: unknown) {
+    throw new InternalServerError(`${error}`);
+  }
+};
