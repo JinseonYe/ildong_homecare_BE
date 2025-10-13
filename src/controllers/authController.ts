@@ -107,6 +107,23 @@ export const login = async (
 
     const { userId, userName, password: storedHashedPassword } = user[0]; // 비밀번호 해시와 사용자 이름 가져오기
 
+    const userInfo = await userModel.findUserById(userId);
+    if (!userInfo || userInfo.length === 0) {
+      return res.status(400).send({
+        success: false,
+        message: '유저 정보를 찾을 수 없습니다.',
+      });
+    }
+    const userRole = userInfo[0].user_role;
+    const isApproved = userInfo[0].is_approved;
+
+    if (!isApproved) {
+      return res.status(400).send({
+        success: false,
+        message: '인증되지 않은 회원입니다.',
+      });
+    }
+
     // 비밀번호가 일치하는지 확인
     const isMatch = await authService.comparePassword(
       password,
@@ -134,15 +151,6 @@ export const login = async (
       }
       deviceId = deviceInfo.deviceUUID || '';
     }
-
-    const userInfo = await userModel.findUserById(userId);
-    if (!userInfo || userInfo.length === 0) {
-      return res.status(400).send({
-        success: false,
-        message: '유저 정보를 찾을 수 없습니다.',
-      });
-    }
-    const userRole = userInfo[0].user_role;
 
     const secretKey = process.env.SECRET_KEY ?? '';
     const R_secretKey = process.env.R_SECRET_KEY ?? '';
