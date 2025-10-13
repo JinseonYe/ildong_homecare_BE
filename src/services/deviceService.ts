@@ -18,10 +18,7 @@ export const processDeviceInfo = async (userId: any, deviceInfo: any) => {
     }
 
     // 디바이스 정보 삽입 전 기존 디바이스 정보 조회
-    let existDeviceInfo = await deviceModel.findDeviceInfoByUserId(
-      userId,
-      deviceUUID,
-    );
+    let existDeviceInfo = await deviceModel.findDeviceByUUID(deviceUUID);
     existDeviceInfo = formatting.toCamelCase(existDeviceInfo);
 
     // 만약 기존 디바이스 정보가 있다면

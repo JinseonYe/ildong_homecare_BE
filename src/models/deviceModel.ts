@@ -32,15 +32,14 @@ export const insertDeviceInfo = async (userId: any, deviceInfo: any) => {
 };
 
 // 디바이스 정보 조회
-export const findDeviceInfoByUserId = async (userId: any, deviceUUID: any) => {
+export const findDeviceByUUID = async (deviceUUID: any) => {
   let conn;
-  const params = [userId, deviceUUID];
+  const params = [deviceUUID];
 
   try {
     let sql = `
       SELECT * FROM t_user_device 
-      WHERE user_id = ?
-      AND device_uuid = ?
+      WHERE device_uuid = ?
       `;
 
     conn = await pool.getConnection();
@@ -93,13 +92,13 @@ export const updateDeviceInfo = async (userId: any, deviceInfo: any) => {
   let conn;
   const { deviceUUID, osVersion, pushToken } = deviceInfo;
   const now = new Date();
-  let params = [osVersion, pushToken, now, deviceUUID, userId];
+  let params = [userId, osVersion, pushToken, now, deviceUUID];
 
   try {
     let sql = `
       UPDATE t_user_device 
-      SET os_version = ?, push_token = ?, updated_at = ?
-      WHERE device_uuid = ? AND user_id = ?`;
+      SET user_id = ?, os_version = ?, push_token = ?, updated_at = ?
+      WHERE device_uuid = ?`;
 
     conn = await pool.getConnection();
 

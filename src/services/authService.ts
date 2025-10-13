@@ -73,8 +73,9 @@ export const isUserEmailAvailable = async (userEmail: string) => {
 export const findUserByIdService = async (userEmail: string) => {
   const userInfo = await authModel.findUserById(userEmail);
 
-  if (userInfo.length === 0) {
-    return null; // 사용자가 없는 경우
+  // 사용자가 없는 경우
+  if (userInfo && userInfo.length === 0) {
+    return null;
   }
 
   const userInfoToCamel = formatting.toCamelCase(userInfo);
