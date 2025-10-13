@@ -377,7 +377,7 @@ export const updateCareReport = async (
               pushService.sendPushProcess(
                 [userId],
                 `작업내역 승인`,
-                `건물명: <${buildingName}> 에 대한 작업내역이 승인되었습니다.`,
+                `건물명: ${buildingName}`,
                 pushType,
               ),
               new Promise(
