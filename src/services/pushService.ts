@@ -84,6 +84,7 @@ export const sendFCMNotification = async (
   title: string,
   body: string,
   pushType: any,
+  pushData?: any,
 ) => {
   let successCount = 0;
   let failureCount = 0;
@@ -112,6 +113,7 @@ export const sendFCMNotification = async (
     const message = {
       notification: { title, body },
       tokens: chunk,
+      data: pushData,
       android: { notification: { title, body } },
       apns: {
         payload: {
@@ -192,6 +194,7 @@ export const sendPushProcess = async (
   title: string,
   body: string,
   pushType: any,
+  pushData?: any,
 ) => {
   try {
     const allTokens = await collectPushToken(targetUserIds);
@@ -203,6 +206,7 @@ export const sendPushProcess = async (
       title,
       body,
       pushType,
+      pushData,
     );
   } catch (error) {
     throw new InternalServerError(`${error}`);

@@ -65,3 +65,14 @@ export const convertingTime = (date: Date) => {
 
   return convertedTime;
 };
+
+// FCM 푸시 메세지 보낼 데이터 포맷팅
+export const buildPushData = (
+  data: Record<string, string | number>,
+  action?: string,
+) => ({
+  ...Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [key, String(value)]),
+  ),
+  action,
+});

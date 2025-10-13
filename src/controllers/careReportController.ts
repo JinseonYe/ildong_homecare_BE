@@ -26,9 +26,9 @@ export const createCareReport = async (
       logger.info('파일이 업로드되지 않았습니다.');
     }
 
-    const result = await careReportService.createCareReport(body, files);
+    const careReportId = await careReportService.createCareReport(body, files);
 
-    if (result) {
+    if (careReportId) {
       // 빌딩 정보 조회
       const buildingInfo = await userService.getBuildingInfo(buildingId);
       const userInfo = await userService.getUserInfo(userId);
@@ -45,6 +45,12 @@ export const createCareReport = async (
       const targetUserIds = [buildingOwnerId, ...admins.map((a) => a.user_id)];
       const pushType = 'report';
 
+      // FCM 페이로드
+      const pushData = formatting.buildPushData(
+        { careReportId },
+        'OPEN_DETAIL',
+      );
+
       // 푸시 알람 전송
       try {
         await pushService.sendPushProcess(
@@ -52,6 +58,7 @@ export const createCareReport = async (
           title,
           content,
           pushType,
+          pushData,
         );
       } catch (pushError) {
         // FCM 에러가 발생해도 작업내역 등록은 계속 진행

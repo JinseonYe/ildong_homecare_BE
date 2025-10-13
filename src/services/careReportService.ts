@@ -77,7 +77,7 @@ export const createCareReport = async (careReportInfo: any, files: any) => {
     }
 
     await conn.commit(); // 성공 시 커밋
-    return true;
+    return careReportId;
   } catch (error) {
     if (conn) await conn.rollback(); // 에러 발생 시 롤백
     throw new InternalServerError(`${error}`);
@@ -369,6 +369,11 @@ export const updateCareReport = async (
       const pushType = 'report';
       const targetUserIds = users.map((u) => u.user_id); // users 배열에서 user_id만 추출해서 넘김
 
+      const pushData = formatting.buildPushData(
+        { careReportId },
+        'OPEN_DETAIL',
+      );
+
       await Promise.all(
         targetUserIds.map(async (userId) => {
           try {
@@ -379,6 +384,7 @@ export const updateCareReport = async (
                 `작업내역 승인`,
                 `건물명: ${buildingName}`,
                 pushType,
+                pushData,
               ),
               new Promise(
                 (_, reject) =>
