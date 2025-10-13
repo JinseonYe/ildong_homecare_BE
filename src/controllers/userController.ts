@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/userService';
-import { UserSearchDto } from '../interfaces/userInterface';
+import {
+  UserSearchDto,
+  UserSearchKeywordDto,
+} from '../interfaces/userInterface';
 import * as formatting from '../utils/formatting';
 import { NotFoundError } from '../errors/httpError';
 import { logger } from '../middlewares/loggingMiddleware';
@@ -108,6 +111,46 @@ export const getUsers = async (
         message: '조회 결과가 없습니다.',
         data: [],
         pagination: null,
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 유저 목록 조회
+export const getUsersByKeyword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const fieldsQuery = req.query.fields ? String(req.query.fields) : '';
+    const fieldsArray = fieldsQuery
+      .split(',')
+      .map((f) => f.trim()) // 공백 제거
+      .filter((f) => f !== ''); // 빈 문자열 제거
+
+    const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
+
+    const userSearchDto: UserSearchKeywordDto = {
+      fields: fieldsArray.length > 0 ? fieldsArray : undefined,
+      keyword,
+    };
+
+    const result = await userService.getUsersByKeyword(userSearchDto);
+
+    if (result) {
+      return res.status(200).json({
+        success: true,
+        message: '조회 성공',
+        data: result,
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: '조회 결과가 없습니다.',
+        data: [],
       });
     }
   } catch (error) {

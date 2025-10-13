@@ -202,3 +202,20 @@ export const deleteUserById = async (userId: any) => {
     if (conn) conn.release();
   }
 };
+
+// 유저 목록 조회하기
+export const findUsersByKeword = async (whereClause: string, params: any[]) => {
+  const conn = await pool.getConnection();
+
+  try {
+    const sql = `SELECT * FROM t_user_profile ${whereClause}`;
+    const [rows] = await conn.query(sql, params);
+    return rows;
+  } catch (err) {
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] findUsersByKeword: ${err}`, err);
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+};

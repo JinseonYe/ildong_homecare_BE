@@ -7,7 +7,10 @@ import { pool } from '../config/db';
 import * as userModel from '../models/userModel';
 import * as buildingModel from '../models/buildingModel';
 import * as formatting from '../utils/formatting';
-import { UserSearchDto } from '../interfaces/userInterface';
+import {
+  UserSearchDto,
+  UserSearchKeywordDto,
+} from '../interfaces/userInterface';
 import * as generateQuery from '../utils/generateQuery';
 import * as fileService from '../services/fileService';
 
@@ -117,6 +120,43 @@ export const getUsers = async (userDto: UserSearchDto) => {
     );
     const resultToCamel = formatting.toCamelCase(result);
     return resultToCamel;
+  } catch (error: unknown) {
+    throw new InternalServerError(`${error}`);
+  }
+};
+
+// 유저 목록 조회
+export const getUsersByKeyword = async (userDto: UserSearchKeywordDto) => {
+  if (!userDto || Object.keys(userDto).length === 0) {
+    throw new BadRequest('No search criteria provided');
+  }
+
+  const { fields = [], keyword } = userDto;
+
+  // 화이트리스트 체크
+  const allowedFields = [
+    'user_name',
+    'user_email',
+    'phone_number',
+    'user_role',
+    'is_approved',
+  ];
+  const searchFields = fields.filter((f) => allowedFields.includes(f));
+
+  let whereClause = '';
+  let params: any[] = [];
+
+  // 검색 조건이 있을 때만 OR 조건 생성
+  if (searchFields.length > 0 && keyword !== undefined && keyword !== '') {
+    const orConditions = searchFields.map((f) => `${f} LIKE ?`).join(' OR ');
+    whereClause = `WHERE (${orConditions})`;
+    params = Array(searchFields.length).fill(`%${keyword}%`);
+  }
+
+  // 검색 조건이 없으면 whereClause = '' → 전체 조회
+  try {
+    const result = await userModel.findUsersByKeword(whereClause, params);
+    return formatting.toCamelCase(result);
   } catch (error: unknown) {
     throw new InternalServerError(`${error}`);
   }
