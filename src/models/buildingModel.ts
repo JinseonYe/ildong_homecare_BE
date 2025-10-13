@@ -149,3 +149,35 @@ export const deleteBuilding = async (conn: any, buildingId: any) => {
     }
   }
 };
+
+// 작업내역 ID 별로 건물 정보 조회
+export const fetchBuildingByCareReportId = async (careReportId: any) => {
+  let conn;
+
+  try {
+    const params = [careReportId];
+    let sql = `
+      SELECT b.building_id, b.building_name
+      FROM t_building AS b
+      JOIN t_care_report AS cr ON  b.building_id = cr.building_id
+      WHERE cr.care_report_id = ?
+      `;
+
+    conn = await pool.getConnection();
+
+    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
+      sql,
+      params,
+    );
+    return rows;
+  } catch (err) {
+    if (err instanceof Error) {
+      throw new DatabaseError(
+        `[Method] fetchBuildingByCareReportId: ${err}`,
+        err,
+      );
+    }
+  } finally {
+    if (conn) conn.release();
+  }
+};

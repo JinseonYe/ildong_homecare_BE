@@ -11,7 +11,7 @@ import { FieldPacket, RowDataPacket } from 'mysql2';
 import * as buildingService from '../services/buildingService';
 import * as generateQuery from '../utils/generateQuery';
 import * as userModel from '../models/userModel';
-import * as deviceModel from '../models/deviceModel';
+import * as buildingModel from '../models/buildingModel';
 import * as pushService from '../services/pushService';
 import * as fileService from '../services/fileService';
 import { logger } from '../middlewares/loggingMiddleware';
@@ -325,6 +325,20 @@ export const updateCareReport = async (
       updatedAt,
     );
 
+    const buildingInfo = await buildingModel.fetchBuildingByCareReportId(
+      careReportId,
+    );
+
+    if (
+      !buildingInfo ||
+      buildingInfo.length === 0 ||
+      !buildingInfo?.[0]?.buildingName
+    ) {
+      throw new NotFoundError('건물 정보를 찾을 수 없습니다.');
+    }
+
+    const buildingName = buildingInfo[0].buildingName;
+
     if (result.affectedRows === 0) {
       throw new NotFoundError('작업 내역 정보 수정 실패');
     }
@@ -362,8 +376,8 @@ export const updateCareReport = async (
             await Promise.race([
               pushService.sendPushProcess(
                 [userId],
-                '작업내역 승인',
-                '작업내역이 승인되었습니다.',
+                `작업내역 승인`,
+                `건물명: <${buildingName}> 에 대한 작업내역이 승인되었습니다.`,
                 pushType,
               ),
               new Promise(
