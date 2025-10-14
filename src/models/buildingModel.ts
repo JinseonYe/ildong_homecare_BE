@@ -151,9 +151,10 @@ export const deleteBuilding = async (conn: any, buildingId: any) => {
 };
 
 // 작업내역 ID 별로 건물 정보 조회
-export const fetchBuildingByCareReportId = async (careReportId: any) => {
-  let conn;
-
+export const fetchBuildingByCareReportId = async (
+  conn: any,
+  careReportId: any,
+) => {
   try {
     const params = [careReportId];
     let sql = `
@@ -163,12 +164,11 @@ export const fetchBuildingByCareReportId = async (careReportId: any) => {
       WHERE cr.care_report_id = ?
       `;
 
-    conn = await pool.getConnection();
-
     const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
       sql,
       params,
     );
+
     return rows;
   } catch (err) {
     if (err instanceof Error) {
@@ -177,8 +177,6 @@ export const fetchBuildingByCareReportId = async (careReportId: any) => {
         err,
       );
     }
-  } finally {
-    if (conn) conn.release();
   }
 };
 

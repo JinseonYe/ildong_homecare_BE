@@ -11,6 +11,7 @@ import { FieldPacket, RowDataPacket } from 'mysql2';
 import * as buildingService from '../services/buildingService';
 import * as generateQuery from '../utils/generateQuery';
 import * as userModel from '../models/userModel';
+import * as fileModel from '../models/fileModel';
 import * as buildingModel from '../models/buildingModel';
 import * as pushService from '../services/pushService';
 import * as fileService from '../services/fileService';
@@ -306,7 +307,7 @@ export const updateCareReport = async (
   updateData: any,
   files: any,
 ) => {
-  let conn;
+  let conn: any;
   const pushStatus: { userId: number; success: boolean; error?: string }[] = []; // 푸시 상황
 
   try {
@@ -314,9 +315,32 @@ export const updateCareReport = async (
     conn = await pool.getConnection();
     await conn.beginTransaction(); // 트랜잭션 시작
 
-    const careStatusId = updateData.careStatusId;
-    const { setQuery, values } = generateQuery.generateUpdateQuery(updateData);
+    const { keepImages, ...filteredUpdateData } = updateData;
+    const careStatusId = filteredUpdateData.careStatusId;
+    const targetType = 'carereport';
+    const originalImages = await fileModel.getFilesByTartgetIdAndName(
+      careReportId,
+      targetType,
+    );
 
+    // 삭제할 이미지가 있으면 삭제
+    const deleteImages = originalImages?.filter(
+      (img) => !keepImages.includes(img.file_url),
+    );
+
+    if (Array.isArray(deleteImages) && deleteImages.length > 0) {
+      await Promise.all(
+        deleteImages.map((img) =>
+          fileModel.softDeleteDocumentInfo(conn, img.file_upload_id),
+        ),
+      );
+    }
+
+    // 업데이트 쿼리 뽑기
+    const { setQuery, values } =
+      generateQuery.generateUpdateQuery(filteredUpdateData);
+
+    // 작업 내역 수정
     let result = await careReportModel.updateCareReport(
       conn,
       careReportId,
@@ -325,28 +349,27 @@ export const updateCareReport = async (
       updatedAt,
     );
 
+    if (result.affectedRows === 0) {
+      throw new NotFoundError('작업 내역 정보 수정 실패');
+    }
+
+    // 건물 정보
     const buildingInfo = await buildingModel.fetchBuildingByCareReportId(
+      conn,
       careReportId,
     );
 
     if (
       !buildingInfo ||
       buildingInfo.length === 0 ||
-      !buildingInfo?.[0]?.buildingName
+      !buildingInfo?.[0]?.building_name
     ) {
       throw new NotFoundError('건물 정보를 찾을 수 없습니다.');
     }
 
-    const buildingName = buildingInfo[0].buildingName;
+    const buildingName = buildingInfo[0].building_name;
 
-    if (result.affectedRows === 0) {
-      throw new NotFoundError('작업 내역 정보 수정 실패');
-    }
-
-    const targetType = 'carereport';
-    await fileService.softDeleteDocumentInfo(conn, careReportId, targetType); // 작업내역 수정 시 기존 파일 삭제
-
-    // 파일 정보 수정
+    // 새로운 파일 등록
     await fileService.insertFileInfos(
       conn,
       files,

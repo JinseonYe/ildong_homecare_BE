@@ -53,7 +53,7 @@ export const softDeleteDocumentInfo = async (
   targetId: any,
   targetType: string,
 ) => {
-  const isDeleted = await fileModel.softDeleteDocumentInfo(
+  const isDeleted = await fileModel.softDeleteDocumentInfoByTargetId(
     conn,
     targetId,
     targetType,
