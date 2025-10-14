@@ -50,20 +50,21 @@ export const updateUserProfile = async (
     }
 
     const targetType = 'profile';
-    const fileDeletedResult = await fileService.softDeleteDocumentInfo(
-      conn,
-      userId,
-      targetType,
-    );
 
-    // 파일 정보 수정
-    await fileService.insertFileInfos(
-      conn,
-      files,
-      userId,
-      targetType,
-      updatedAt,
-    );
+    // 업데이트 파일이 있으면 수정
+    if (Array.isArray(files) && files.length > 0) {
+      // 기존 파일을 삭제하고
+      await fileService.softDeleteDocumentInfo(conn, userId, targetType);
+
+      // 새로운 업데이트 파일 삽입
+      await fileService.insertFileInfos(
+        conn,
+        files,
+        userId,
+        targetType,
+        updatedAt,
+      );
+    }
 
     await conn.commit(); // 성공 시 커밋
 
