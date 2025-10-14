@@ -211,3 +211,49 @@ export const updateCareReport = async (
     next(error);
   }
 };
+
+// 작업 내역 조회하기
+export const getCareReportsByKeyword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const requestQuery = req.query;
+    const requestQueryToCamel = formatting.toCamelCase(requestQuery);
+    const userId = requestQueryToCamel.userId;
+    const fieldsQuery = requestQueryToCamel.fields
+      ? String(req.query.fields)
+      : '';
+    const keyword = requestQueryToCamel.keyword;
+    const startDate = requestQueryToCamel.startDate;
+    const endDate = requestQueryToCamel.endDate;
+
+    const fieldsArray = fieldsQuery
+      .split(',')
+      .map((f) => f.trim()) // 공백 제거
+      .filter((f) => f !== ''); // 빈 문자열 제거
+
+    const careReportSearchDto = {
+      userId,
+      fields: fieldsArray.length > 0 ? fieldsArray : undefined,
+      keyword,
+      startDate,
+      endDate,
+    };
+
+    const result = await careReportService.getCareReportsByKeyword(
+      careReportSearchDto,
+    );
+
+    if (result) {
+      return res.status(200).send({
+        success: true,
+        message: '작업 내역 조회를 성공했습니다.',
+        data: result,
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};

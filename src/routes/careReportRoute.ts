@@ -11,6 +11,10 @@ router.post(
   careReportController.createCareReport,
 );
 router.get('/api/care-reports', careReportController.getCareReports);
+router.get(
+  '/api/care-reports/search',
+  careReportController.getCareReportsByKeyword,
+);
 router.get('/api/care-report', careReportController.getCareReportById);
 router.patch(
   '/api/care-report/:careReportId',

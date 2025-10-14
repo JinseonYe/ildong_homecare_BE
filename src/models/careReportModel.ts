@@ -2,6 +2,7 @@ import { DatabaseError } from '../errors/databaseError';
 import { FieldPacket, RowDataPacket, ResultSetHeader } from 'mysql2';
 import { pool } from '../config/db';
 import { logger } from '../middlewares/loggingMiddleware';
+import { BadRequest } from '../errors/httpError';
 
 // 작업 내역 등록
 export const insertCareReport = async (conn: any, careReportInfo: any) => {
@@ -153,7 +154,9 @@ export const findCareReports = async (
     } else if (userRole == 0) {
       logger.info('어드민 조건 실행됨 - 모든 작업내역 조회');
     } else {
-      logger.info(`userRole이 정의되지 않음: ${userRole}`);
+      throw new BadRequest(
+        `작업내역 조회 권한이 없는 유저등급입니다: ${userRole}`,
+      );
     }
     // 어드민(0): 모든 작업내역 조회 (추가 조건 없음)
 
@@ -300,5 +303,107 @@ export const updateCareReport = async (
     if (error instanceof Error) {
       throw new DatabaseError(`[Method] updateCareReport: ${error}`, error);
     }
+  }
+};
+
+// 필터별로 작업 내역 조회
+// TODO: 우선 모든 카테고리 id를 한 컬럼에 넣어서 문자로 묶어서 보내는데 요구사항 수정에 따라 변경 가능함
+export const findCareReportsByKeyword = async (
+  userRole?: any,
+  currentUserId?: any, // 현재 로그인한 사용자 ID 추가
+  startDate?: string,
+  endDate?: string,
+  searchConditions?: any,
+  params?: any,
+) => {
+  let conn;
+  const deleteStatus = 0;
+
+  try {
+    let whereClause = '';
+    const queryParams: any[] = [deleteStatus, deleteStatus, deleteStatus]; // 기본 파라미터
+
+    // 검색 조건이 있으면 AND (...) 형태로 붙이기
+    if (searchConditions.length > 0) {
+      whereClause += ` AND (${searchConditions.join(' OR ')})`;
+      queryParams.push(...params);
+    }
+
+    let sql = `
+      SELECT 
+        cr.care_report_id, cr.user_id, cr.building_id, cr.care_status_id, b.building_name,
+        cr.title, cr.care_content, cr.care_comment, cr.amount,
+        GROUP_CONCAT(crc.care_category_id ORDER BY crc.care_category_id SEPARATOR ', ') AS care_categories,
+        (SELECT f.file_name FROM t_file_upload AS f 
+        WHERE f.target_id = cr.care_report_id 
+          AND f.target_type = 'carereport' 
+          AND f.is_deleted = ?
+        ORDER BY f.created_at 
+        LIMIT 1) AS file_name,
+        (SELECT f.file_url FROM t_file_upload AS f 
+        WHERE f.target_id = cr.care_report_id 
+          AND f.target_type = 'carereport' 
+          AND f.is_deleted = ?
+        ORDER BY f.created_at 
+        LIMIT 1) AS file_url,
+        cr.created_at
+      FROM t_care_report AS cr
+      LEFT JOIN t_care_report_category AS crc 
+        ON cr.care_report_id = crc.care_report_id
+      JOIN t_building AS b
+        ON cr.building_id = b.building_id
+      WHERE cr.is_deleted = ?
+      ${whereClause}
+      `;
+
+    // userRole에 따른 조회 권한 설정
+    logger.info(`findCareReports - userRole: ${userRole}`);
+    logger.info(`findCareReports - currentUserId: ${currentUserId}`);
+
+    if (userRole == 2) {
+      // 건물주(2): 본인의 건물의 작업내역만 조회
+      logger.info('건물주 조건 실행됨');
+      sql += ` AND b.user_id = ?`;
+      queryParams.push(currentUserId);
+    } else if (userRole == 1) {
+      // 매니저(1): 본인이 등록한 작업내역만 조회
+      logger.info('매니저 조건 실행됨');
+      sql += ` AND cr.user_id = ?`;
+      queryParams.push(currentUserId);
+    } else if (userRole == 0) {
+      logger.info('어드민 조건 실행됨 - 모든 작업내역 조회');
+    } else {
+      throw new BadRequest(
+        `작업내역 조회 권한이 없는 유저등급입니다: ${userRole}`,
+      );
+    }
+    // 어드민(0): 모든 작업내역 조회 (추가 조건 없음)
+
+    // 조건이 있을 때만 추가
+    if (startDate && endDate) {
+      sql += ` AND cr.created_at BETWEEN ? AND ?`;
+      queryParams.push(startDate, endDate);
+    } else if (startDate) {
+      sql += ` AND cr.created_at >= ?`;
+      queryParams.push(startDate);
+    } else if (endDate) {
+      sql += ` AND cr.created_at <= ?`;
+      queryParams.push(endDate);
+    }
+
+    sql += ` GROUP BY cr.care_report_id ORDER BY cr.created_at DESC`;
+
+    conn = await pool.getConnection();
+    const [rows]: [RowDataPacket[], FieldPacket[]] = await conn.query(
+      sql,
+      queryParams,
+    );
+    return rows;
+  } catch (err) {
+    if (err instanceof Error) {
+      throw new DatabaseError(`[Method] findCareReportsByKeyword: ${err}`, err);
+    }
+  } finally {
+    if (conn) conn.release();
   }
 };

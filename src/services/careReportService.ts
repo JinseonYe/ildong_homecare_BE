@@ -159,7 +159,12 @@ export const getCareReports = async (careReportSearchDto: any) => {
 
   if (userId) {
     userRole = await userModel.findUserRoleByUserId(userId);
-    if (userRole) userRole = userRole[0].user_role;
+
+    if (userRole.length > 0) {
+      userRole = userRole[0].user_role;
+    } else {
+      throw new BadRequest(`유저ID ${userId}에 해당하는 유저등급이 없습니다.`);
+    }
   }
 
   try {
@@ -323,17 +328,19 @@ export const updateCareReport = async (
       targetType,
     );
 
-    // 삭제할 이미지가 있으면 삭제
-    const deleteImages = originalImages?.filter(
-      (img) => !keepImages.includes(img.file_url),
-    );
-
-    if (Array.isArray(deleteImages) && deleteImages.length > 0) {
-      await Promise.all(
-        deleteImages.map((img) =>
-          fileModel.softDeleteDocumentInfo(conn, img.file_upload_id),
-        ),
+    if (keepImages) {
+      // 삭제할 이미지가 있으면 삭제
+      const deleteImages = originalImages?.filter(
+        (img) => !keepImages.includes(img.file_url),
       );
+
+      if (Array.isArray(deleteImages) && deleteImages.length > 0) {
+        await Promise.all(
+          deleteImages.map((img) =>
+            fileModel.softDeleteDocumentInfo(conn, img.file_upload_id),
+          ),
+        );
+      }
     }
 
     // 업데이트 쿼리 뽑기
@@ -430,5 +437,71 @@ export const updateCareReport = async (
     throw new InternalServerError(`${error}`);
   } finally {
     if (conn) conn.release();
+  }
+};
+
+// 작업 내역 조회하기
+export const getCareReportsByKeyword = async (careReportDto: any) => {
+  const {
+    userId,
+    fields = [],
+    keyword,
+    startDate,
+    endDate,
+  } = careReportDto || {};
+
+  // 프론트 필드 → 실제 컬럼 매핑
+  const fieldMap: Record<string, string> = {
+    building_name: 'b.building_name',
+  };
+
+  // 유효한 필드만 남기고 실제 컬럼으로 변환
+  const searchFields = fields
+    .map((f: string) => f.trim())
+    .filter((f: any) => fieldMap[f])
+    .map((f: any) => fieldMap[f]); // SQL 컬럼명으로 변환
+
+  const searchConditions: string[] = [];
+  const params: any[] = [];
+
+  if (searchFields.length > 0 && keyword) {
+    searchFields.forEach((f: any) => {
+      searchConditions.push(`${f} LIKE ?`);
+      params.push(`%${keyword}%`);
+    });
+  }
+
+  let userRole: any;
+
+  // 유저 id에 대한 필터가 있으면 유저 등급을 추출
+  if (userId) {
+    userRole = await userModel.findUserRoleByUserId(userId);
+
+    if (userRole.length > 0) {
+      userRole = userRole[0].user_role;
+    } else {
+      throw new BadRequest(`유저ID ${userId}에 해당하는 유저등급이 없습니다.`);
+    }
+  }
+
+  try {
+    const fetchedData = await careReportModel.findCareReportsByKeyword(
+      userRole,
+      userId, // 현재 로그인한 사용자 ID 전달
+      startDate,
+      endDate,
+      searchConditions,
+      params,
+    );
+
+    let result = formatting.toCamelCase(fetchedData, ['file_name', 'file_url']);
+
+    if (result) {
+      return result;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    throw new InternalServerError(`${error}`);
   }
 };
