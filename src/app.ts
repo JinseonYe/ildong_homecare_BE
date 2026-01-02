@@ -15,6 +15,12 @@ import { loggingMiddleware } from './middlewares/loggingMiddleware';
 
 const app = express();
 
+app.get('/robots.txt', (_req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+  Disallow: /`);
+});
+
 // ES 모듈에서 __dirname 사용을 위한 설정
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
